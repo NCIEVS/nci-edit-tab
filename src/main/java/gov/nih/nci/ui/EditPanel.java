@@ -209,19 +209,6 @@ public class EditPanel extends JPanel {
         	createComplexPropertyTable((OWLAnnotationProperty) it.next());
         }        
         
-        /*list = new OWLFrameList<OWLClass>(owlEditorKit, 
-        		new FilteredOWLClassesFrame(owlEditorKit, propsToExclude, readOnlyProperties), read_only) {
-        	
-        	public void handleDelete() {
-        		super.handleDelete();
-        		//NCIEditTab.currentTab().classModified();        		
-        	}
-        	
-        	public void handleEdit() {
-        		super.handleEdit();
-        	    //NCIEditTab.currentTab().classModified();
-        	}        	
-        };*/
         
         list = new OWLFrameList<OWLClass>(owlEditorKit, new NCIOWLClassDescriptionFrame(owlEditorKit)) {
         //list = new OWLFrameList<OWLClass>(owlEditorKit, new OWLClassDescriptionFrame(owlEditorKit)) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+    <VSNode splits="0.3 0.3 0.4">
+            <CNode>
+                <Component label="Asserted Class hierarchy">
+                    <Property id="pluginId" value="nci-edit-tab.AssertedTreeView"/>
+                </Component>            
+            </CNode>  
+            <CNode>
+                <Component label="Inferred Class hierarchy">
+                    <Property id="pluginId" value="nci-edit-tab.InferredTreeView"/>
+                </Component>            
+            </CNode>             
+            <HSNode splits="0.375 0.625">
+                <CNode>
+                    <Component label="Inferences">
+                       <Property id="pluginId" value="org.protege.editor.owl.InferredAxioms"/>
+                    </Component>                
+                </CNode>
+                <VSNode splits="0.5 0.5">
+                <CNode>
+                   <Component label="Asserted Sups">
+                       <Property id="pluginId" value="org.protege.editor.owl.OWLAssertedSuperClassHierarchy"/>
+                   </Component>
+               </CNode>
+                
+               <CNode>
+                   <Component label="Inferred Sups">
+                       <Property id="pluginId" value="org.protege.editor.owl.OWLInferredSuperClassHierarchy"/>
+                   </Component>
+               </CNode>
+               
+               </VSNode>
+               
+           </HSNode>
+   </VSNode>
+   
+</layout>

@@ -42,6 +42,17 @@
         <class value="gov.nih.nci.ui.InferredTreeView"/>
         <headerColor value="@org.protege.ontologycolor"/>
         <category value="Inference Results"/>
+        <category value="@org.protege.classcategory"/>
+        <navigates value="@org.protege.classcategory"/>
+    </extension>
+    <extension id="AssertedTreeView"
+               point="org.protege.editor.core.application.ViewComponent">
+        <label value="Asserted Navigation Hierachy"/>
+        <class value="gov.nih.nci.ui.AssertedTreeView"/>
+        <headerColor value="@org.protege.ontologycolor"/>
+        <category value="Asserted Results"/>
+        <category value="@org.protege.classcategory"/>
+        <navigates value="@org.protege.classcategory"/>
     </extension>
     <!--
      <extension id="PropertyTableView"
