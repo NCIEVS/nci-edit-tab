@@ -18,7 +18,6 @@ import org.semanticweb.owlapi.model.OWLOntology;
 public class NCIOWLAnnotationsFrameSectionRow extends OWLAnnotationsFrameSectionRow {
 	
 	private Set<OWLAnnotationProperty> propsToExclude;
-	private NCIOWLAnnotationEditor editor = null;
 	
 	public NCIOWLAnnotationsFrameSectionRow(OWLEditorKit owlEditorKit, 
 			OWLFrameSection<OWLAnnotationSubject, OWLAnnotationAssertionAxiom, OWLAnnotation> section, 
@@ -26,7 +25,6 @@ public class NCIOWLAnnotationsFrameSectionRow extends OWLAnnotationsFrameSection
 			OWLAnnotationSubject rootObject, Set<OWLAnnotationProperty> exclude, OWLAnnotationAssertionAxiom axiom, boolean isEditable) {
 		super(owlEditorKit, section, ontology, rootObject, axiom, isEditable);
 		propsToExclude = exclude;
-		editor = (NCIOWLAnnotationEditor) section.getEditor();
 	}
 
 	public NCIOWLAnnotationsFrameSectionRow(OWLEditorKit owlEditorKit,
@@ -35,11 +33,11 @@ public class NCIOWLAnnotationsFrameSectionRow extends OWLAnnotationsFrameSection
 			Set<OWLAnnotationProperty> exclude, OWLAnnotationAssertionAxiom axiom) {
 		super(owlEditorKit, section, ontology, rootObject, axiom);
 		propsToExclude = exclude;
-		editor = (NCIOWLAnnotationEditor) section.getEditor();
-		// TODO Auto-generated constructor stub
 	}
 	
 	protected OWLObjectEditor<OWLAnnotation> getObjectEditor() {
+		OWLObjectEditor<OWLAnnotation> editor = 
+				new NCIOWLAnnotationEditor(getOWLEditorKit(), propsToExclude);
         editor.setEditedObject(getAxiom().getAnnotation());
         return editor;
     }

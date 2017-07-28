@@ -33,8 +33,6 @@ public class NCIAnnotationFrameSection extends AbstractOWLFrameSection<OWLAnnota
     
     private Set<OWLAnnotationProperty> propsToExclude;
     private Set<OWLAnnotationProperty> readOnlyProps;
-    private NCIOWLAnnotationEditor editor = null;
-
 
     public NCIAnnotationFrameSection(OWLEditorKit editorKit, OWLFrame<? extends OWLAnnotationSubject> frame, Set<OWLAnnotationProperty> props,
     		Set<OWLAnnotationProperty> read_only_props) {
@@ -81,11 +79,7 @@ public class NCIAnnotationFrameSection extends AbstractOWLFrameSection<OWLAnnota
 
 
     public OWLObjectEditor<OWLAnnotation> getObjectEditor() {
-    	if (editor != null) {
-    	} else {
-    		editor = new NCIOWLAnnotationEditor(getOWLEditorKit(), propsToExclude);
-    	}
-    	return editor;
+    	return new NCIOWLAnnotationEditor(getOWLEditorKit(), propsToExclude);    	
     }
 
 

@@ -10,7 +10,7 @@
 
 	<groupId>gov.nih.nci</groupId>
 	<artifactId>nci-edit-tab</artifactId>
-	<version>0.6.7-SNAPSHOT</version>
+	<version>0.6.9-SNAPSHOT</version>
 	<name>Edit Tab</name> 
 	<description>An editing tab for NCI's complex editing operations</description>
 	<packaging>bundle</packaging>
