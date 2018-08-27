@@ -110,6 +110,7 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
         this.owlEditorKit = owlEditorKit;
         this.type = type;
         if (prefName.isPresent()) {
+        	batch_mode = true;
         	buildNewClass(prefName.get(), code);        	
         } else {
         	createUI(message);        	
@@ -404,6 +405,8 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
     private List<OWLOntologyChange> ont_changes = null;
     private boolean dont_apply_changes = false;
     
+    private boolean batch_mode = false;
+    
     public List<OWLOntologyChange> getOntChanges() {return ont_changes;}
     		
     
@@ -481,44 +484,47 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 				
 		changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
 		
-		//Add DEFINITION
-		HashMap<String, String> propValueMap = getPropertyValueMap();
-		
-		if (NCIEditTab.currentTab().isRestricted(newClass, defComplexProp)) {
-			JOptionPane.showMessageDialog(this, "Property " + defComplexProp.getIRI().getShortForm() +
-					 " is restricted to certain editors", "Warning", JOptionPane.WARNING_MESSAGE);
-			return false; 
-		}
+		if (!batch_mode) {
 
-		if (NCIEditTab.currentTab().containsAsciiLessThan32(propValueMap.get("Value"))) {
-			JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
-			return false; 
-		}
-		CharMapper mapper = new CharMapper();
-		String value = propValueMap.get("Value");
-		if (value != null && !value.isEmpty()) {
-			new_axiom = df.getOWLAnnotationAssertionAxiom(defComplexProp, newClass.getIRI(), 
-					df.getOWLLiteral(mapper.fix(value), OWL2Datatype.RDF_PLAIN_LITERAL));
-	
-			anns = new HashSet<OWLAnnotation>();
-			req_props = NCIEditTab.currentTab().getConfiguredAnnotationsForAnnotation(defComplexProp);
-	
-			for (OWLAnnotationProperty prop : req_props) {
-				String val = propValueMap.get(prop.getIRI().getShortForm());
-				if (val != null && !val.isEmpty()) {
-					if (NCIEditTab.currentTab().containsAsciiLessThan32(val)) {
-						JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
-						return false; 
-					}
-					OWLAnnotation new_ann = df.getOWLAnnotation(prop, 
-							df.getOWLLiteral(mapper.fix(val), OWL2Datatype.RDF_PLAIN_LITERAL));
-					anns.add(new_ann);
-	
-				}
+			//Add DEFINITION
+			HashMap<String, String> propValueMap = getPropertyValueMap();
+
+			if (NCIEditTab.currentTab().isRestricted(newClass, defComplexProp)) {
+				JOptionPane.showMessageDialog(this, "Property " + defComplexProp.getIRI().getShortForm() +
+						" is restricted to certain editors", "Warning", JOptionPane.WARNING_MESSAGE);
+				return false; 
 			}
-	
-			new_new_axiom = new_axiom.getAxiomWithoutAnnotations().getAnnotatedAxiom(anns);
-			changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
+
+			if (NCIEditTab.currentTab().containsAsciiLessThan32(propValueMap.get("Value"))) {
+				JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
+				return false; 
+			}
+			CharMapper mapper = new CharMapper();
+			String value = propValueMap.get("Value");
+			if (value != null && !value.isEmpty()) {
+				new_axiom = df.getOWLAnnotationAssertionAxiom(defComplexProp, newClass.getIRI(), 
+						df.getOWLLiteral(mapper.fix(value), OWL2Datatype.RDF_PLAIN_LITERAL));
+
+				anns = new HashSet<OWLAnnotation>();
+				req_props = NCIEditTab.currentTab().getConfiguredAnnotationsForAnnotation(defComplexProp);
+
+				for (OWLAnnotationProperty prop : req_props) {
+					String val = propValueMap.get(prop.getIRI().getShortForm());
+					if (val != null && !val.isEmpty()) {
+						if (NCIEditTab.currentTab().containsAsciiLessThan32(val)) {
+							JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
+							return false; 
+						}
+						OWLAnnotation new_ann = df.getOWLAnnotation(prop, 
+								df.getOWLLiteral(mapper.fix(val), OWL2Datatype.RDF_PLAIN_LITERAL));
+						anns.add(new_ann);
+
+					}
+				}
+
+				new_new_axiom = new_axiom.getAxiomWithoutAnnotations().getAnnotatedAxiom(anns);
+				changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
+			}
 		}
 		
 		this.ont_changes = changes;
