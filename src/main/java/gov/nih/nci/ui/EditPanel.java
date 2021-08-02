@@ -204,6 +204,8 @@ public class EditPanel extends JPanel {
         
         tabbedPane.addTab("General", genPropPanel);
         
+        //System.out.println("there are " + complexProps.size() + "complex props");
+        
         Iterator<OWLAnnotationProperty> it = complexProps.iterator();
         while(it.hasNext()) {
         	createComplexPropertyTable((OWLAnnotationProperty) it.next());

@@ -1553,7 +1553,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	}
 	
 	
-	private void initProperties() {
+	private synchronized void initProperties() {
 		
 		getOWLEditorKit().getSearchManager().disableIncrementalIndexing();
 		
@@ -1610,11 +1610,14 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 				if (options.isPresent()) {
 					ProjectOptions opts = options.get();
 					Set<String> complex_props = opts.getValues(COMPLEX_PROPS);
+					//System.out.println("The config ays there are " + complex_props.size());
 					complex_properties = new ArrayList<OWLAnnotationProperty>();
+					//System.out.println("Before Init " + complex_properties.size() + " yes");
 					if (complex_props != null) {						
 						for (String cp : complex_props) {
 							OWLAnnotationProperty p = lookUp(cp);
 							if (p != null) {
+								//System.out.println("adding prop " + p.getIRI().getFragment());
 								complex_properties.add(p);
 							} else {
 								not_found_props.add(cp);
@@ -1719,6 +1722,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 				}
 
 			}
+			//System.out.println("After Init " + complex_properties.size() + " yes");
 			try {
 
 				for (Operation op : clientSession.getActiveClient().getActiveOperations(clientSession.getActiveProject())) {
