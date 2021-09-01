@@ -102,6 +102,7 @@ import edu.stanford.protege.search.lucene.tab.engine.IndexDirMapper;
 import edu.stanford.protege.search.lucene.tab.engine.QueryType;
 import edu.stanford.protege.search.lucene.tab.engine.SearchTabManager;
 import edu.stanford.protege.search.lucene.tab.engine.SearchTabResultHandler;
+import gov.nih.nci.api.NCIPropertyCheck;
 import gov.nih.nci.curator.CuratorReasonerPreferences;
 import gov.nih.nci.ui.action.ComplexOperation;
 import gov.nih.nci.ui.dialog.NCIClassCreationDialog;
@@ -2613,7 +2614,8 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
         				OWLAxiom duplicatedAxiom = dup.duplicateObject(ax);
         				changes.add(new AddAxiom(ont, duplicatedAxiom));
         			} else if (label.equals(selectedClassName) &&
-        					annot.getProperty().equals(this.getFullSyn())) {
+        					annot.getProperty().equals(this.getFullSyn()) &&
+        					(new NCIPropertyCheck()).isQualsPTNCI(ax)) {
         				
         			} else {
         				OWLAxiom duplicatedAxiom = dup.duplicateObject(ax);
