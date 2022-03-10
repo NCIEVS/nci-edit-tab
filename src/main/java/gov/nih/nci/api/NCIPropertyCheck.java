@@ -31,7 +31,7 @@ public class NCIPropertyCheck implements RuleService {
     	}
     	if ((assertions.size() != 1)) {
     		message.add("Warning");
-    		message.add("One and only one PT with source NCI is allowed in Full Syn.");
+    		message.add("One and only one PT with source UAB is allowed in Full Syn.");		// edited for UAB
     		return false;
     	} 
     	message.add(assertions.get(0).getValue().asLiteral().get().getLiteral());
@@ -43,13 +43,13 @@ public class NCIPropertyCheck implements RuleService {
 		return ((getAnnotationValue(ax, SYN_TYPE).equals("PT") ||
 				getAnnotationValue(ax, SYN_TYPE).equals("AQ") ||
 				getAnnotationValue(ax, SYN_TYPE).equals("HD")) &&
-				getAnnotationValue(ax, SYN_SOURCE).equals("NCI"));
+				getAnnotationValue(ax, SYN_SOURCE).equals("UAB"));							// edited for UAB
 	}
 
 	@Override
 	public boolean isDefNCI(OWLAnnotationAssertionAxiom ax) {
 		String ann_val = getAnnotationValue(ax, DEF_SOURCE);    	
-    	return ann_val.equalsIgnoreCase("NCI");
+    	return ann_val.equalsIgnoreCase("UAB");												// edited for UAB
 	}
 	
 	private String getAnnotationValue(OWLAnnotationAssertionAxiom axiom, OWLAnnotationProperty annProp) {
@@ -76,7 +76,7 @@ public class NCIPropertyCheck implements RuleService {
 						tg.equals("AQ") ||
 						tg.equals("HD"))
 						&&
-				ts.equals("NCI")) {
+				ts.equals("UAB")) {														// edited for UAB
 			isIt = true;
 		}
     	return isIt;

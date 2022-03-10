@@ -136,7 +136,8 @@ public class PropertyCheckUtil {
     	List<OWLOntologyChange> changes = new ArrayList<OWLOntologyChange>();
     	
     	if (!isSavable) {
-    		JOptionPane.showMessageDialog(tab, "One and only one PT with source NCI is allowed in Full Syn.", "Warning", JOptionPane.WARNING_MESSAGE);
+			// editedf below for use with Gout/UAB
+    		JOptionPane.showMessageDialog(tab, "One and only one PT with source UAB is allowed in Full Syn.", "Warning", JOptionPane.WARNING_MESSAGE);
     		return false;
     	} else {
     		syncPrefNameLabel(cls, message.get(0), changes);
