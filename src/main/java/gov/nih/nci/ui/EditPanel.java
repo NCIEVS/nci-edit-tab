@@ -206,12 +206,12 @@ public class EditPanel extends JPanel {
         genPropPanel.add(generalSP, BorderLayout.CENTER);
         
         tabbedPane.addTab("General", genPropPanel);
-        
-        Iterator<OWLAnnotationProperty> it = complexProps.iterator();
-        while(it.hasNext()) {
-        	createComplexPropertyTable((OWLAnnotationProperty) it.next());
-        }        
-        
+        if(!complexProps.isEmpty()) {
+	        Iterator<OWLAnnotationProperty> it = complexProps.iterator();
+	        while(it.hasNext()) {
+	        	createComplexPropertyTable((OWLAnnotationProperty) it.next());
+	        }        
+        }
         
         list = new NCIOWLFrameList<OWLClass>(owlEditorKit, new NCIOWLClassDescriptionFrame(owlEditorKit)) {
 			private static final long serialVersionUID = 1L;
@@ -294,12 +294,12 @@ public class EditPanel extends JPanel {
     		}
     		complexPropertyPanel.repaint();
     		
-    		list.setReadOnly(isReadOnly(cls));
+    		list.setReadOnly(NCIEditTab.currentTab().isImported(cls));
     		
     		list.setRootObject(cls);
     		
     		if (cls != null) {
-    			gen_props.setReadOnly(isReadOnly(cls));
+    			gen_props.setReadOnly(NCIEditTab.currentTab().isImported(cls));
     			gen_props.setRootObject(cls.getIRI());
     		}
 
@@ -333,12 +333,6 @@ public class EditPanel extends JPanel {
     	return this.currentClass;
     }
     
-    private boolean isReadOnly(OWLClass cls) {
-    	return NCIEditTab.currentTab().isImported(cls) ||
-    			NCIEditTab.currentTab().isGuest();
-    	
-    }
-    
     public void addNewComplexProp() {
     	ComplexPropChooser chooser = new ComplexPropChooser(NCIEditTab.currentTab().getComplexProperties());
     	OWLAnnotationProperty c_prop = chooser.showDialog(owlEditorKit, "Choosing Complex Property");
@@ -356,7 +350,6 @@ public class EditPanel extends JPanel {
     private void createComplexPropertyTable(OWLAnnotationProperty complexProperty) {
     	Optional<String> tableName = NCIEditTab.currentTab().getRDFSLabel(complexProperty);
     	PropertyTablePanel tablePanel = new PropertyTablePanel(this.owlEditorKit, complexProperty, tableName.get());
-    	
     	tablePanelList.add(tablePanel);
     }
     

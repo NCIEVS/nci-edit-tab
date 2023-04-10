@@ -239,21 +239,34 @@ public class ComplexEditPanel extends JPanel {
     	OWLRendererPreferences.getInstance().setRenderHyperlinks(true);
     }
     private JPanel createRadioButtonPanel() {
-    	
-    	radioButtonPanel = new JPanel();
     	splitButton = new JRadioButton("Split");
     	cloneButton = new JRadioButton("Copy");
     	mergeButton = new JRadioButton("Merge");
     	dualButton = new JRadioButton("Dual Edits");
+    	
+    	radioButtonPanel = new JPanel();
     	radioButtonGroup = new ButtonGroup();
-    	radioButtonGroup.add(splitButton);
-    	radioButtonGroup.add(cloneButton);
-    	radioButtonGroup.add(mergeButton);
-    	radioButtonGroup.add(dualButton);
-    	radioButtonPanel.add(splitButton);
-    	radioButtonPanel.add(cloneButton);
-    	radioButtonPanel.add(mergeButton);
-    	radioButtonPanel.add(dualButton);
+    	
+    	if(NCIEditTabPreferences.getFnSplit()) {
+    		//splitButton = new JRadioButton("Split");
+    		radioButtonGroup.add(splitButton);
+    		radioButtonPanel.add(splitButton);
+    	}
+    	if(NCIEditTabPreferences.getFnCopy()) {
+    		//cloneButton = new JRadioButton("Copy");
+    		radioButtonGroup.add(cloneButton);
+    		radioButtonPanel.add(cloneButton);
+    	}
+    	if(NCIEditTabPreferences.getFnMerge()) {
+    		//mergeButton = new JRadioButton("Merge");
+    		radioButtonGroup.add(mergeButton);
+    		radioButtonPanel.add(mergeButton);
+    	}
+    	if(NCIEditTabPreferences.getFnDualEdits()) {
+    		//dualButton = new JRadioButton("Dual Edits");
+    		radioButtonGroup.add(dualButton);
+    		radioButtonPanel.add(dualButton);
+    	}
     	
     	ActionListener cbl = new ActionListener() {
 
@@ -287,10 +300,18 @@ public class ComplexEditPanel extends JPanel {
 			}
     		
     	};
-    	splitButton.addActionListener(cbl);
-    	mergeButton.addActionListener(cbl);
-    	cloneButton.addActionListener(cbl);
-    	dualButton.addActionListener(cbl);
+    	//if(NCIEditTabPreferences.getFnSplit()) {
+    		splitButton.addActionListener(cbl);
+    	//}
+    	//if(NCIEditTabPreferences.getFnMerge()) {
+    		mergeButton.addActionListener(cbl);
+    	//}
+    	//if(NCIEditTabPreferences.getFnCopy()) {
+    		cloneButton.addActionListener(cbl);
+    	//}
+    	//if(NCIEditTabPreferences.getFnDualEdits()) {
+    		dualButton.addActionListener(cbl);
+    	//}
     	return radioButtonPanel;
     }
     

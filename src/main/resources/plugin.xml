@@ -169,6 +169,11 @@
         <editorKitId value="OWLEditorKit"/>
     </extension>
 	
-
+	<extension id="ui.nciedittab.prefs"
+               point="org.protege.editor.core.application.preferencespanel">
+        <label value="NCI Edit Tab"/>
+        <!--<class value="org.protege.editor.owl.ui.annotation.EntityCreationMetadataPreferencesPanel"/>-->
+        <class value="gov.nih.nci.ui.NCIEditTabPreferencesPanel"/>
+    </extension>
     
 </plugin>
