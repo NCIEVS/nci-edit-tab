@@ -9,7 +9,7 @@ import org.protege.editor.core.ui.preferences.PreferencesLayoutPanel;
 import org.protege.editor.owl.ui.preferences.OWLPreferencesPanel;
 
 public class NCIEditTabPreferencesPanel extends OWLPreferencesPanel {
-
+	//Add comments here
 	private static final long serialVersionUID = 1L;
 
     private JLabel complexEditLabel = new JLabel("Complex Edit");
