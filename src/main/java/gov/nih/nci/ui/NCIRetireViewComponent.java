@@ -37,29 +37,31 @@ public class NCIRetireViewComponent extends OWLClassAnnotationsViewComponent imp
 
 	@Override
 	public void initialiseClassView() throws Exception {
-		retirePanel = new RetirePanel(getOWLEditorKit());
-    	setLayout(new BorderLayout());
-        add(retirePanel);
-        
+		if (NCIEditTabPreferences.getFnRetire()) {
+			retirePanel = new RetirePanel(getOWLEditorKit());
+	    	setLayout(new BorderLayout());
+	        add(retirePanel);
+		}
 	}
 	
 	@Override
 	protected OWLClass updateView(OWLClass selectedClass) {	
-		if (retirePanel.getRetiringClass() != null) {
-			if (!selectedClass.equals(retirePanel.getRetiringClass())) {
-				// switch to edit tab to edit reference to retiring class
-				if (NCIEditTab.currentTab().getCurrentOp().isRetiring()) {
-					NCIEditTab.currentTab().selectClass(selectedClass);
-					getOWLEditorKit().getWorkspace().getViewManager().bringViewToFront(
-							"nci-edit-tab.EditView");
+		if(retirePanel != null) {
+			if (retirePanel.getRetiringClass() != null) {
+				if (!selectedClass.equals(retirePanel.getRetiringClass())) {
+					// switch to edit tab to edit reference to retiring class
+					if (NCIEditTab.currentTab().getCurrentOp().isRetiring()) {
+						NCIEditTab.currentTab().selectClass(selectedClass);
+						getOWLEditorKit().getWorkspace().getViewManager().bringViewToFront(
+								"nci-edit-tab.EditView");
+					}
+	
 				}
-
+			} else if (NCIEditTab.currentTab().isRetired(selectedClass)) {
+				this.retirePanel.setOWLClass(null);
+				return null;
 			}
-		} else if (NCIEditTab.currentTab().isRetired(selectedClass)) {
-			this.retirePanel.setOWLClass(null);
-			return null;
 		}
-		
 		return selectedClass;
 	}
 
