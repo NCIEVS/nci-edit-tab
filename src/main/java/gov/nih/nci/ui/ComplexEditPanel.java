@@ -187,10 +187,11 @@ public class ComplexEditPanel extends JPanel {
             		}
             	} else {
             		PropertyCheckUtil propCheckUtil = new PropertyCheckUtil();
-            		if ((propCheckUtil.syncFullSyn(lowerPanelClass.getRootObject())) &&
+            		if (NCIEditTab.currentTab().getComplexProperties().isEmpty() ||
+            				((propCheckUtil.syncFullSyn(lowerPanelClass.getRootObject())) &&
             				(propCheckUtil.syncFullSyn(upperPanelClass.getRootObject())) &&
             				propCheckUtil.syncDefinition(lowerPanelClass.getRootObject()) &&
-            				propCheckUtil.syncDefinition(upperPanelClass.getRootObject())) {
+            				propCheckUtil.syncDefinition(upperPanelClass.getRootObject()))) {
 
             			if (NCIEditTab.currentTab().commitChanges(true)) {
             				NCIEditTab.currentTab().completeOp();

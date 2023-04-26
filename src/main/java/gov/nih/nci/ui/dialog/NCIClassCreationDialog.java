@@ -138,9 +138,12 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
         rowIndex++;
         holder.add(new JSeparator(), new GridBagConstraints(0, rowIndex, 2, 1, 100.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 2, 5, 2), 0, 0));
         rowIndex++;
-        createDefinitionPanel();
-        holder.add(definitionPanel, new GridBagConstraints(0, rowIndex, 2, 1, 100.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
-        rowIndex++;
+        Set<OWLAnnotationProperty> configuredAnnotations = getConfiguredAnnotations(NCIEditTabConstants.DEFINITION);
+        if (configuredAnnotations != null) {
+	        createDefinitionPanel();
+	        holder.add(definitionPanel, new GridBagConstraints(0, rowIndex, 2, 1, 100.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+	        rowIndex++;
+        }
         holder.add(new JSeparator(), new GridBagConstraints(0, rowIndex, 2, 1, 100.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 2, 5, 2), 0, 0));
         rowIndex++;
 
@@ -181,7 +184,8 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
     	// NOTE: currently we have no way to distinguish byCode versus byName Kbs.
     	defComplexProp = NCIEditTabConstants.DEFINITION;
 
-    	Set<OWLAnnotationProperty> configuredAnnotations = NCIEditTab.currentTab().getConfiguredAnnotationsForAnnotation(defComplexProp);
+    	//Set<OWLAnnotationProperty> configuredAnnotations = NCIEditTab.currentTab().getConfiguredAnnotationsForAnnotation(defComplexProp);
+    	Set<OWLAnnotationProperty> configuredAnnotations = getConfiguredAnnotations(defComplexProp);
     	Map<String, List<String>> defaultPropValues = new HashMap<String, List<String>>();
 
     	for (OWLAnnotationProperty annotProp : configuredAnnotations) {
@@ -244,6 +248,11 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 
 
     	definitionPanel.setBorder(BorderFactory.createTitledBorder("Definition"));
+    }
+    
+    private Set<OWLAnnotationProperty> getConfiguredAnnotations(OWLAnnotationProperty annotationProperty) {
+    	Set<OWLAnnotationProperty> configuredAnnotations = NCIEditTab.currentTab().getConfiguredAnnotationsForAnnotation(annotationProperty);
+    	return configuredAnnotations;
     }
     
     private JPanel createTextFieldPanel(String prop, List<String> propList){
@@ -454,24 +463,26 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 		Set<OWLAnnotation> anns = new HashSet<OWLAnnotation>();
 		Set<OWLAnnotationProperty> req_props = NCIEditTab.currentTab().getRequiredAnnotationsForAnnotation(full_syn);
 		
-		for (OWLAnnotationProperty prop : req_props) {
-			
-			String val = NCIEditTab.currentTab().getDefaultValue(NCIEditTab.currentTab().getDataType(prop), NCIEditTabConstants.DEFAULT_SOURCE_NEW_CLASS);
-			if (val == null) {
-				val = "No_Default";
-
+		if (req_props != null) {
+			for (OWLAnnotationProperty prop : req_props) {
+				
+				String val = NCIEditTab.currentTab().getDefaultValue(NCIEditTab.currentTab().getDataType(prop), NCIEditTabConstants.DEFAULT_SOURCE_NEW_CLASS);
+				if (val == null) {
+					val = "No_Default";
+	
+				}
+				OWLAnnotation new_ann = df.getOWLAnnotation(prop, df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL));
+				anns.add(new_ann);
+	
+	
 			}
-			OWLAnnotation new_ann = df.getOWLAnnotation(prop, df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL));
-			anns.add(new_ann);
-
-
 		}
 		
 		OWLAxiom new_new_axiom = new_axiom.getAxiomWithoutAnnotations().getAnnotatedAxiom(anns);
 				
 		changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
 		
-		if (!batch_mode) {
+		if (!batch_mode && defComplexProp != null) {
 
 			//Add DEFINITION
 			HashMap<String, String> propValueMap = getPropertyValueMap();

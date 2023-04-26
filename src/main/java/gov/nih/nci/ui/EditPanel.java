@@ -108,11 +108,13 @@ public class EditPanel extends JPanel {
         
         tabbedPane = new JTabbedPane();
         
-        complexPropertyPanel = new JPanel();
-        complexPropertyPanel.setLayout(new BoxLayout(complexPropertyPanel, BoxLayout.Y_AXIS));
-        JScrollPane compPropSP = new JScrollPane(complexPropertyPanel);
-       
-        tabbedPane.addTab("Complex Properties", compPropSP);
+        if(!complexProps.isEmpty()) {
+	        complexPropertyPanel = new JPanel();
+	        complexPropertyPanel.setLayout(new BoxLayout(complexPropertyPanel, BoxLayout.Y_AXIS));
+	        JScrollPane compPropSP = new JScrollPane(complexPropertyPanel);
+	       
+	        tabbedPane.addTab("Complex Properties", compPropSP);
+        }
         
         genPropPanel = new JPanel();
         genPropPanel.setLayout(new BorderLayout());
@@ -292,7 +294,9 @@ public class EditPanel extends JPanel {
     				this.complexPropertyPanel.remove(tablePanel);
     			}
     		}
-    		complexPropertyPanel.repaint();
+    		if (complexPropertyPanel != null) {
+    			complexPropertyPanel.repaint();
+    		}
     		
     		list.setReadOnly(NCIEditTab.currentTab().isImported(cls));
     		
@@ -318,7 +322,9 @@ public class EditPanel extends JPanel {
     				this.complexPropertyPanel.remove(tablePanel);
     			}
     		}
-    		complexPropertyPanel.repaint();
+    		if (complexPropertyPanel != null) {
+    			complexPropertyPanel.repaint();
+    		}
     		list.setRootObject(null);
     		gen_props.setRootObject(null);
     		prefNameText.setText(null);
