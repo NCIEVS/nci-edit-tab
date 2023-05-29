@@ -73,7 +73,9 @@ public class ComplexEditTransferHandler extends TransferHandler {
 
 				if (dlg.showDialog()) {
 					NCIEditTab.currentTab().splitClass(dlg.getNewClass(), data.get(0), clone_p);
-					complexEditPanel.setEnableUnselectedRadioButtons(false);
+					//if (NCIEditTab.currentTab().hasActiveClient()) {
+						complexEditPanel.setEnableUnselectedRadioButtons(false);
+					//}
 					return true;
 				} else {
 					NCIEditTab.currentTab().cancelOp();					

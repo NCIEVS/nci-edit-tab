@@ -51,6 +51,7 @@ import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLOntologyChange;
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 
 import gov.nih.nci.ui.NCIEditTab;
@@ -99,7 +100,7 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
         this.type = type;
         if (prefName.isPresent()) {
         	batch_mode = true;
-        	buildNewClass(prefName.get(), code);        	
+        	buildNewClassServer(prefName.get(), code);        	
         } else {
         	createUI(message);        	
         }        
@@ -319,37 +320,41 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
     public <T extends OWLEntity> boolean showDialog() {
     	int ret = JOptionPane.OK_OPTION;
     	while (ret == JOptionPane.OK_OPTION) {
-    		ret = new UIHelper(owlEditorKit).showValidatingDialog("Create a new " + type.getSimpleName(), this, this.preferredNameField);
-    		if (ret == JOptionPane.OK_OPTION) {
-    			OWLEntityFinder finder = owlEditorKit.getOWLModelManager().getOWLEntityFinder();
-    			Set<OWLClass> entities = finder.getMatchingOWLClasses(getEntityName());
-    			if (!entities.isEmpty()) {
-    				boolean c_exists = false;
+    		if (NCIEditTab.currentTab().hasActiveClient()) {
+    			ret = new UIHelper(owlEditorKit).showValidatingDialog("Create a new " + type.getSimpleName(), this, this.preferredNameField);
+    			if (ret == JOptionPane.OK_OPTION) {
+    				OWLEntityFinder finder = owlEditorKit.getOWLModelManager().getOWLEntityFinder();
+    				Set<OWLClass> entities = finder.getMatchingOWLClasses(getEntityName());
+    				if (!entities.isEmpty()) {
+    					boolean c_exists = false;
     			
-    				for (OWLClass c : entities) {
-    					if (owlEditorKit.getModelManager().getRendering(c).equals(possiblyEscape(getEntityName()))) {
-    						c_exists = true;
-    						break;
+    					for (OWLClass c : entities) {
+    						if (owlEditorKit.getModelManager().getRendering(c).equals(possiblyEscape(getEntityName()))) {
+    							c_exists = true;
+    							break;
+    						}
+    					}
+    					if (c_exists) {
+    						int allow = JOptionPane.showConfirmDialog(this, "Preferred name already exists", "warning",
+    							JOptionPane.OK_CANCEL_OPTION);
+    						if (allow == JOptionPane.CANCEL_OPTION) {
+    							return false;
+    						} 
+    					} else {
+    						if (buildNewClassServer(getEntityName(), Optional.empty())) {
+    							return true;
+    						}
+    					}
+    				} else {
+    					if (buildNewClassServer(getEntityName(), Optional.empty())) {
+    						return true;
     					}
     				}
-    				if (c_exists) {
-    					int allow = JOptionPane.showConfirmDialog(this, "Preferred name already exists", "warning",
-    							JOptionPane.OK_CANCEL_OPTION);
-    					if (allow == JOptionPane.CANCEL_OPTION) {
-    						return false;
-    					} 
-    				} else {
-    					if (buildNewClass(getEntityName(), Optional.empty())) {
-							return true;
-						}
-    				}
-    			} else {
-    				if (buildNewClass(getEntityName(), Optional.empty())) {
-    					return true;
-    				}
     			}
-
-
+    		} else {
+    			if (buildNewClassLocal(getEntityName(), Optional.empty())) {
+					return true;
+				}
     		}
     	} 
     	return false;
@@ -400,7 +405,7 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
     public List<OWLOntologyChange> getOntChanges() {return ont_changes;}
     		
     
-    public boolean buildNewClass(String preferredName, Optional<String> code) {
+    public boolean buildNewClassServer(String preferredName, Optional<String> code) {
     	
     	if (preferredName == null || preferredName.equals("")) {
     		JOptionPane.showMessageDialog(this, "Preferred name is required", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -536,7 +541,26 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 		return true;
     }
     
-  
+public boolean buildNewClassLocal(String preferredName, Optional<String> code) {
+    	
+		OWLEntityCreationSet<OWLClass> newSet = owlEditorKit.getWorkspace().createOWLClass();
+
+		OWLClass newClass = newSet.getOWLEntity();
+
+		List<OWLOntologyChange> changes = new ArrayList<>();
+		changes.addAll(newSet.getOntologyChanges());
+		
+		final OWLModelManager mngr = owlEditorKit.getModelManager();
+		
+		this.ont_changes = changes;
+		this.newClass = newClass;
+		
+		if (!dont_apply_changes) {
+			mngr.applyChanges(ont_changes);
+		}
+		
+		return true;
+    }
     
     private HashMap<String, String> getPropertyValueMap(){
     	

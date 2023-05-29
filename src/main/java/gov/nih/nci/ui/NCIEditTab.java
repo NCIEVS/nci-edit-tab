@@ -465,6 +465,14 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 		tab = this;
 	}
 	
+	public boolean hasActiveClient() {
+		LocalHttpClient cl = (LocalHttpClient) clientSession.getActiveClient();
+		if (cl != null) {
+			return true;
+		}
+		return false;
+	}
+	
 	public List<String> generateCodes(int no) {
 		LocalHttpClient cl = (LocalHttpClient) clientSession.getActiveClient();
 		List<String> codes = new ArrayList<String>(); 
@@ -1299,11 +1307,9 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     	
     	List<OWLOntologyChange> changes = new ArrayList<OWLOntologyChange>();
     	
-    	
-    	
     	if (clone_p) {
     		
-    	} else {
+    	} else if (hasActiveClient()){
     		OWLLiteral fromCode = df.getOWLLiteral(selectedClass.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL);
     		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(SPLIT_FROM, newClass.getIRI(), fromCode);
     		changes.add(new AddAxiom(ontology, ax));
@@ -1748,8 +1754,9 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 				e.printStackTrace();
 			}
 			this.fireChange(new EditTabChangeEvent(this, ComplexEditType.INIT_PROPS));
+		} else {
+			annProps = ontology.getAnnotationPropertiesInSignature();
 		}
-		
 	}
 	
 	private boolean is_required(OWLAnnotationProperty prop) {

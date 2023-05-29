@@ -186,18 +186,24 @@ public class ComplexEditPanel extends JPanel {
             		               "nci-edit-tab.ComplexEditView");
             		}
             	} else {
-            		PropertyCheckUtil propCheckUtil = new PropertyCheckUtil();
-            		if (NCIEditTab.currentTab().getComplexProperties().isEmpty() ||
-            				((propCheckUtil.syncFullSyn(lowerPanelClass.getRootObject())) &&
-            				(propCheckUtil.syncFullSyn(upperPanelClass.getRootObject())) &&
-            				propCheckUtil.syncDefinition(lowerPanelClass.getRootObject()) &&
-            				propCheckUtil.syncDefinition(upperPanelClass.getRootObject()))) {
-
-            			if (NCIEditTab.currentTab().commitChanges(true)) {
-            				NCIEditTab.currentTab().completeOp();
-
-            				reset();
-            			}
+            		if (NCIEditTab.currentTab().hasActiveClient()) {
+	            		PropertyCheckUtil propCheckUtil = new PropertyCheckUtil();
+	            		if (NCIEditTab.currentTab().getComplexProperties().isEmpty() ||
+	            				((propCheckUtil.syncFullSyn(lowerPanelClass.getRootObject())) &&
+	            				(propCheckUtil.syncFullSyn(upperPanelClass.getRootObject())) &&
+	            				propCheckUtil.syncDefinition(lowerPanelClass.getRootObject()) &&
+	            				propCheckUtil.syncDefinition(upperPanelClass.getRootObject()))) {
+	
+	            			if (NCIEditTab.currentTab().commitChanges(true)) {
+	            				NCIEditTab.currentTab().completeOp();
+	
+	            				reset();
+	            			}
+	            		}
+            		} else {
+            			NCIEditTab.currentTab().completeOp();
+            			NCIEditTab.currentTab().resetHistory();
+        				reset();
             		}
             	}
             	
@@ -335,6 +341,9 @@ public class ComplexEditPanel extends JPanel {
     
     
     public void setEnableUnselectedRadioButtons(boolean enable) {
+    	/*if (!NCIEditTab.currentTab().hasActiveClient() && !enable) {
+    		return;
+    	}*/
     	
     	if (!isSplitBtnSelected()) {
     		splitButton.setEnabled(enable);
@@ -422,7 +431,9 @@ public class ComplexEditPanel extends JPanel {
 	}
 	
 	public void enableButtons() {
-    	saveButton.setEnabled(true);
+		//if (NCIEditTab.currentTab().hasActiveClient()) {
+			saveButton.setEnabled(true);
+		//}
     	clearButton.setEnabled(true);
     	
     }
