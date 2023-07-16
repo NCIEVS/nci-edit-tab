@@ -563,92 +563,100 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     	
     	OWLClass source = current_op.getSource();
     	OWLClass target = current_op.getTarget();
-    	
-    	if (isPreMerged(source)) {
+    	if (hasActiveClient()) {
+	    	if (isPreMerged(source)) {
+	    		
+	    		Set<OWLAnnotationAssertionAxiom> props = ontology.getAnnotationAssertionAxioms(source.getIRI());    		
+	    		for (OWLAnnotationAssertionAxiom p : props) {
+	    			if (p.getProperty().equals(MERGE_TARGET)) {
+	    				changes.add(new RemoveAxiom(ontology, p));
+	    			}
+	    			
+	    		}
+	    		props = ontology.getAnnotationAssertionAxioms(target.getIRI());    		
+	    		for (OWLAnnotationAssertionAxiom p : props) {
+	    			if (p.getProperty().equals(MERGE_SOURCE)) {
+	    				changes.add(new RemoveAxiom(ontology, p));
+	    			}
+	    			
+	    		}
+	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+						df.getOWLSubClassOfAxiom(source, RETIRE_ROOT))); 
+				// finalize merge
+				// remove parents and roles, OLD_ROLE OLD_PARENT
+				// retarget inbound roles and children
+				// reuse retire logic for this
+				changes.addAll(finalizeMerge());
+				
+				changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
+	    		
+	    	} else {
+	    		if (switchMergeSourceTarget()) {
+	    			int result = JOptionPane.showOptionDialog(null, "Retiring Concept was created before the Surviving Concept. Do you want to switch them?", 
+							"Switch Retiring and Surviving Concept", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
+					if (result == JOptionPane.OK_OPTION) {
+						OWLClass temp = target;
+		    			setTarget(source);
+		    			setSource(temp);
+		    			this.fireChange(new EditTabChangeEvent(this, ComplexEditType.MERGE));
+						return false;
+					} 
+					
+	    		} 
+	    		// TODO:
+	    		String editornote = "Merge into " + getRDFSLabel(target).get() + "(" + target.getIRI().getShortForm() + ")";
+	    		editornote += ", " + clientSession.getActiveClient().getUserInfo().getName();
+	    		
+	    		String designnote = "See '" + getRDFSLabel(target).get() + "(" + target.getIRI().getShortForm() + ")" + "'";
+	    		
+	    		List<OWLOntologyChange> dcs = addNotes(editornote, designnote, source);
+	    		
+	    		if (dcs.isEmpty()) {
+	    			fireChange(new EditTabChangeEvent(this, ComplexEditType.MERGE));
+					return false;
+	    		}
+	    		
+	    		changes.addAll(dcs);
+	    		
+	    		changes.addAll(mergeAttrs());
+	
+	    		// if workflow modeler, add MERGE_TARGET/SOURCE props and tree under pre-merged    		
+	    		if (!isWorkFlowManager()) {
+	
+	    			OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(MERGE_TARGET, 
+	    					source.getIRI(), 
+	    					df.getOWLLiteral(target.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
+	
+	    			ax = df.getOWLAnnotationAssertionAxiom(MERGE_SOURCE, 
+	    					target.getIRI(), 
+	    					df.getOWLLiteral(source.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
+	
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+	    					df.getOWLSubClassOfAxiom(source, PRE_MERGE_ROOT))); 
+	    		} else {
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+	    					df.getOWLSubClassOfAxiom(source, RETIRE_ROOT)));
+	    			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
+	    			// finalize merge
+	    			// remove parents and roles, OLD_ROLE OLD_PARENT
+	    			// retarget inbound roles and children
+	    			// reuse retire logic for this
+	    			changes.addAll(finalizeMerge());
+	    		}
+	    	} 
+    	} else {
+    		// connect to an owl file
+    		changes.addAll(mergeAttrs());
     		
-    		Set<OWLAnnotationAssertionAxiom> props = ontology.getAnnotationAssertionAxioms(source.getIRI());    		
-    		for (OWLAnnotationAssertionAxiom p : props) {
-    			if (p.getProperty().equals(MERGE_TARGET)) {
-    				changes.add(new RemoveAxiom(ontology, p));
-    			}
-    			
-    		}
-    		props = ontology.getAnnotationAssertionAxioms(target.getIRI());    		
-    		for (OWLAnnotationAssertionAxiom p : props) {
-    			if (p.getProperty().equals(MERGE_SOURCE)) {
-    				changes.add(new RemoveAxiom(ontology, p));
-    			}
-    			
-    		}
-    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
-					df.getOWLSubClassOfAxiom(source, RETIRE_ROOT))); 
+			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
 			// finalize merge
 			// remove parents and roles, OLD_ROLE OLD_PARENT
 			// retarget inbound roles and children
 			// reuse retire logic for this
-			changes.addAll(finalizeMerge());
-			
-			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
-    		
-    	} else {
-    		if (switchMergeSourceTarget()) {
-    			int result = JOptionPane.showOptionDialog(null, "Retiring Concept was created before the Surviving Concept. Do you want to switch them?", 
-						"Switch Retiring and Surviving Concept", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
-				if (result == JOptionPane.OK_OPTION) {
-					OWLClass temp = target;
-	    			setTarget(source);
-	    			setSource(temp);
-	    			this.fireChange(new EditTabChangeEvent(this, ComplexEditType.MERGE));
-					return false;
-				} 
-				
-    		} 
-    		// TODO:
-    		String editornote = "Merge into " + getRDFSLabel(target).get() + "(" + target.getIRI().getShortForm() + ")";
-    		editornote += ", " + clientSession.getActiveClient().getUserInfo().getName();
-    		
-    		String designnote = "See '" + getRDFSLabel(target).get() + "(" + target.getIRI().getShortForm() + ")" + "'";
-    		
-    		List<OWLOntologyChange> dcs = addNotes(editornote, designnote, source);
-    		
-    		if (dcs.isEmpty()) {
-    			fireChange(new EditTabChangeEvent(this, ComplexEditType.MERGE));
-				return false;
-    		}
-    		
-    		changes.addAll(dcs);
-    		
-    		changes.addAll(mergeAttrs());
-
-    		// if workflow modeler, add MERGE_TARGET/SOURCE props and tree under pre-merged    		
-    		if (!isWorkFlowManager()) {
-
-    			OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(MERGE_TARGET, 
-    					source.getIRI(), 
-    					df.getOWLLiteral(target.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
-    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
-
-    			ax = df.getOWLAnnotationAssertionAxiom(MERGE_SOURCE, 
-    					target.getIRI(), 
-    					df.getOWLLiteral(source.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
-    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
-
-    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
-    					df.getOWLSubClassOfAxiom(source, PRE_MERGE_ROOT))); 
-    		} else {
-    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
-    					df.getOWLSubClassOfAxiom(source, RETIRE_ROOT)));
-    			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
-    			// finalize merge
-    			// remove parents and roles, OLD_ROLE OLD_PARENT
-    			// retarget inbound roles and children
-    			// reuse retire logic for this
-    			changes.addAll(finalizeMerge());
-    		}
-    		
-    		
-    		
-    	} 
+			// changes.addAll(finalizeMerge());
+    	}
     	getOWLModelManager().applyChanges(changes);
     	changes.clear();
     	
