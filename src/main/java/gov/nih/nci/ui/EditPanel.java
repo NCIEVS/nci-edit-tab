@@ -379,6 +379,7 @@ public class EditPanel extends JPanel {
             	// Do the save
             	if (shouldSave()) {
             		PropertyCheckUtil propCheckUtil = new PropertyCheckUtil();
+            		if (NCIEditTab.currentTab().hasActiveClient()) {
             		if (propCheckUtil.syncFullSyn(NCIEditTab.currentTab().getCurrentlyEditing())
             				&& propCheckUtil.syncDefinition(NCIEditTab.currentTab().getCurrentlyEditing())
             				&& NCIEditTab.currentTab().isLogicallyCorrect()) {
@@ -387,6 +388,13 @@ public class EditPanel extends JPanel {
             				propCheckUtil.syncPrefName(newPref);                		
             			}
 
+            			if (NCIEditTab.currentTab().commitChanges(true)) {
+            				origPref = prefNameText.getText();
+            				NCIEditTab.currentTab().refreshNavTree();
+            			}
+            		}
+            		} else {
+            			// Not connect to a server
             			if (NCIEditTab.currentTab().commitChanges(true)) {
             				origPref = prefNameText.getText();
             				NCIEditTab.currentTab().refreshNavTree();

@@ -647,7 +647,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	    		}
 	    	} 
     	} else {
-    		// connect to an owl file
+    		// Not connect to a server
     		changes.addAll(mergeAttrs());
     		
 			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
@@ -819,111 +819,204 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     public boolean completeRetire(Map<OWLAnnotationProperty, Set<String>> fixups) {
     	
     	//List<OWLClass> old_parents = new ArrayList<OWLClass>();
-    	
-    	String user = clientSession.getActiveClient().getUserInfo().getName().toString();
-    	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
-    	
-    	String editornote = "Retired on: " + timestamp + " by " + user;
-        String designnote = "Retired on: " + timestamp;
-        
-        
-        OWLClass class_to_retire = current_op.getRetireClass();
-        
-    	List<OWLOntologyChange> changes = addNotes(editornote, designnote, class_to_retire);
-    	if (changes.isEmpty()) {
-    		fireChange(new EditTabChangeEvent(this, ComplexEditType.RETIRE));
-    		//current_op.setRetireParents(old_parents);
-    		return false;
+    	if (clientSession.hasActiveClient()) {
+	    	String user = clientSession.getActiveClient().getUserInfo().getName().toString();
+	    	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+	    	
+	    	String editornote = "Retired on: " + timestamp + " by " + user;
+	        String designnote = "Retired on: " + timestamp;
+	        
+	        
+	        OWLClass class_to_retire = current_op.getRetireClass();
+	        
+	    	List<OWLOntologyChange> changes = addNotes(editornote, designnote, class_to_retire);
+	    	if (changes.isEmpty()) {
+	    		fireChange(new EditTabChangeEvent(this, ComplexEditType.RETIRE));
+	    		//current_op.setRetireParents(old_parents);
+	    		return false;
+	    	}
+	    	
+	    	OWLDataFactory df = getOWLModelManager().getOWLDataFactory();    	
+	        
+	        Set<OWLSubClassOfAxiom> sub_axioms = ontology.getSubClassAxiomsForSubClass(class_to_retire);
+	        
+	        for (OWLSubClassOfAxiom ax1 : sub_axioms) {
+	        	OWLClassExpression exp = ax1.getSuperClass();
+	        	
+	        	changes = addParentRoleAssertions(changes, exp, class_to_retire);
+	        	changes.add(new RemoveAxiom(ontology, ax1));
+	        	
+	        }
+	        
+	        Set<OWLEquivalentClassesAxiom> equiv_axioms = ontology.getEquivalentClassesAxioms(class_to_retire);
+	        
+	        for (OWLEquivalentClassesAxiom ax1 : equiv_axioms) {
+	        	Set<OWLClassExpression> exps = ax1.getClassExpressions();
+	        	for (OWLClassExpression exp : exps) {
+	        		
+	        		changes = addParentRoleAssertions(changes, exp, class_to_retire);
+	        	}
+	        	changes.add(new RemoveAxiom(ontology, ax1));
+	        	
+	        }
+	        
+	        Set<OWLAnnotationAssertionAxiom> assocs = ontology.getAnnotationAssertionAxioms((OWLAnnotationSubject) class_to_retire.getIRI());
+	        
+	        for (OWLAnnotationAssertionAxiom ax1 : assocs) {
+	        	// TODO: check that annotation is an association
+	        	System.out.println("The value of the annotation is: " + ax1.getValue());
+	        	boolean found = false;
+	
+	        	if (ax1.getProperty().isOWLAnnotationProperty()) {
+	        		Set<OWLAnnotationPropertyRangeAxiom> ranges = ontology.getAnnotationPropertyRangeAxioms(ax1.getProperty());
+	        		for (OWLAnnotationPropertyRangeAxiom rax : ranges) {
+	        			System.out.println("The range: " + rax.toString());
+	        			if (rax.getRange().getShortForm().equals("anyURI")) {
+	        				found = true;
+	        			}
+	        		}
+	        	}
+	
+	
+	        	if (found) {
+	        		
+	        		OWLAnnotationValue av = ax1.getValue();
+	        		String ann_val = "";
+	        		if (av.asIRI().isPresent()) {
+	        			ann_val = av.asIRI().get().getShortForm();        			
+	        		} else {
+	        			ann_val = av.toString();
+	        		}
+	
+	        		String val = ax1.getProperty().getIRI().getShortForm() + "|"
+	        				+ ann_val;
+	        		OWLLiteral lit = df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL);
+	        		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(DEP_ASSOC, class_to_retire.getIRI(), lit);
+	        		changes.add(new AddAxiom(ontology, ax));
+	
+	        		changes.add(new RemoveAxiom(ontology, ax1));
+	        	}
+	        }
+	        
+	        for (OWLAnnotationProperty p : fixups.keySet()) {
+	        	for (String s : fixups.get(p)) {
+	        		OWLLiteral val1 = df.getOWLLiteral(s, OWL2Datatype.RDF_PLAIN_LITERAL);
+	        		OWLAxiom ax1 = df.getOWLAnnotationAssertionAxiom(p, class_to_retire.getIRI(), val1);
+	        		changes.add(new AddAxiom(ontology, ax1));        		
+	        	}        	
+	        }
+	        if (currentTab().isWorkFlowManager()) {
+	        	changes.add(new AddAxiom(ontology,
+	        			df.getOWLSubClassOfAxiom(class_to_retire, RETIRE_ROOT)));
+	        	changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(class_to_retire.getIRI())));
+	        	if (DEPR_CONCEPT_STATUS_PROP != null) {
+	        		changes.add(new AddAxiom(ontology,
+	        				df.getOWLAnnotationAssertionAxiom(DEPR_CONCEPT_STATUS_PROP, class_to_retire.getIRI(),
+	        						df.getOWLLiteral(DEPR_CONCEPT_STATUS_VALUE, OWL2Datatype.RDF_PLAIN_LITERAL))));
+	        		
+	        	}
+	        } else {
+	        	changes.add(new AddAxiom(ontology,
+	        			df.getOWLSubClassOfAxiom(class_to_retire, PRE_RETIRE_ROOT))); 
+	        }
+	        
+	        getOWLModelManager().applyChanges(changes);
+	        
+	        return true;
+    	} else {
+    		// Not connect to a server
+    		OWLClass class_to_retire = current_op.getRetireClass();
+    		OWLDataFactory df = getOWLModelManager().getOWLDataFactory();    	
+	        
+	        //Set<OWLSubClassOfAxiom> sub_axioms = ontology.getSubClassAxiomsForSubClass(class_to_retire);
+	        
+	        List<OWLOntologyChange> changes = new ArrayList<OWLOntologyChange>();
+	        /*for (OWLSubClassOfAxiom ax1 : sub_axioms) {
+	        	OWLClassExpression exp = ax1.getSuperClass();
+	        	
+	        	changes = addParentRoleAssertions(changes, exp, class_to_retire);
+	        	changes.add(new RemoveAxiom(ontology, ax1));
+	        	
+	        }*/
+	        
+	        /*Set<OWLEquivalentClassesAxiom> equiv_axioms = ontology.getEquivalentClassesAxioms(class_to_retire);
+	        
+	        for (OWLEquivalentClassesAxiom ax1 : equiv_axioms) {
+	        	Set<OWLClassExpression> exps = ax1.getClassExpressions();
+	        	for (OWLClassExpression exp : exps) {
+	        		
+	        		changes = addParentRoleAssertions(changes, exp, class_to_retire);
+	        	}
+	        	changes.add(new RemoveAxiom(ontology, ax1));
+	        	
+	        }*/
+	        
+	        /*Set<OWLAnnotationAssertionAxiom> assocs = ontology.getAnnotationAssertionAxioms((OWLAnnotationSubject) class_to_retire.getIRI());
+	        
+	        for (OWLAnnotationAssertionAxiom ax1 : assocs) {
+	        	// TODO: check that annotation is an association
+	        	System.out.println("The value of the annotation is: " + ax1.getValue());
+	        	boolean found = false;
+	
+	        	if (ax1.getProperty().isOWLAnnotationProperty()) {
+	        		Set<OWLAnnotationPropertyRangeAxiom> ranges = ontology.getAnnotationPropertyRangeAxioms(ax1.getProperty());
+	        		for (OWLAnnotationPropertyRangeAxiom rax : ranges) {
+	        			System.out.println("The range: " + rax.toString());
+	        			if (rax.getRange().getShortForm().equals("anyURI")) {
+	        				found = true;
+	        			}
+	        		}
+	        	}
+	
+	
+	        	if (found) {
+	        		
+	        		OWLAnnotationValue av = ax1.getValue();
+	        		String ann_val = "";
+	        		if (av.asIRI().isPresent()) {
+	        			ann_val = av.asIRI().get().getShortForm();        			
+	        		} else {
+	        			ann_val = av.toString();
+	        		}
+	
+	        		String val = ax1.getProperty().getIRI().getShortForm() + "|"
+	        				+ ann_val;
+	        		OWLLiteral lit = df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL);
+	        		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(DEP_ASSOC, class_to_retire.getIRI(), lit);
+	        		changes.add(new AddAxiom(ontology, ax));
+	
+	        		changes.add(new RemoveAxiom(ontology, ax1));
+	        	}
+	        }*/
+	        
+	        for (OWLAnnotationProperty p : fixups.keySet()) {
+	        	if (p != null) {
+		        	for (String s : fixups.get(p)) {
+		        		OWLLiteral val1 = df.getOWLLiteral(s, OWL2Datatype.RDF_PLAIN_LITERAL);
+		        		OWLAxiom ax1 = df.getOWLAnnotationAssertionAxiom(p, class_to_retire.getIRI(), val1);
+		        		changes.add(new AddAxiom(ontology, ax1));        		
+		        	}
+	        	}
+	        }
+	        //if (currentTab().isWorkFlowManager()) {
+	        	/*changes.add(new AddAxiom(ontology,
+	        			df.getOWLSubClassOfAxiom(class_to_retire, RETIRE_ROOT)));*/
+	        	changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(class_to_retire.getIRI())));
+	        	/*if (DEPR_CONCEPT_STATUS_PROP != null) {
+	        		changes.add(new AddAxiom(ontology,
+	        				df.getOWLAnnotationAssertionAxiom(DEPR_CONCEPT_STATUS_PROP, class_to_retire.getIRI(),
+	        						df.getOWLLiteral(DEPR_CONCEPT_STATUS_VALUE, OWL2Datatype.RDF_PLAIN_LITERAL))));
+	        		
+	        	}*/
+	        /*} else {
+	        	changes.add(new AddAxiom(ontology,
+	        			df.getOWLSubClassOfAxiom(class_to_retire, PRE_RETIRE_ROOT))); 
+	        }*/
+	        
+	        getOWLModelManager().applyChanges(changes);
+	        
+	        return true;
     	}
-    	
-    	OWLDataFactory df = getOWLModelManager().getOWLDataFactory();    	
-        
-        Set<OWLSubClassOfAxiom> sub_axioms = ontology.getSubClassAxiomsForSubClass(class_to_retire);
-        
-        for (OWLSubClassOfAxiom ax1 : sub_axioms) {
-        	OWLClassExpression exp = ax1.getSuperClass();
-        	
-        	changes = addParentRoleAssertions(changes, exp, class_to_retire);
-        	changes.add(new RemoveAxiom(ontology, ax1));
-        	
-        }
-        
-        Set<OWLEquivalentClassesAxiom> equiv_axioms = ontology.getEquivalentClassesAxioms(class_to_retire);
-        
-        for (OWLEquivalentClassesAxiom ax1 : equiv_axioms) {
-        	Set<OWLClassExpression> exps = ax1.getClassExpressions();
-        	for (OWLClassExpression exp : exps) {
-        		
-        		changes = addParentRoleAssertions(changes, exp, class_to_retire);
-        	}
-        	changes.add(new RemoveAxiom(ontology, ax1));
-        	
-        }
-        
-        Set<OWLAnnotationAssertionAxiom> assocs = ontology.getAnnotationAssertionAxioms((OWLAnnotationSubject) class_to_retire.getIRI());
-        
-        for (OWLAnnotationAssertionAxiom ax1 : assocs) {
-        	// TODO: check that annotation is an association
-        	System.out.println("The value of the annotation is: " + ax1.getValue());
-        	boolean found = false;
-
-        	if (ax1.getProperty().isOWLAnnotationProperty()) {
-        		Set<OWLAnnotationPropertyRangeAxiom> ranges = ontology.getAnnotationPropertyRangeAxioms(ax1.getProperty());
-        		for (OWLAnnotationPropertyRangeAxiom rax : ranges) {
-        			System.out.println("The range: " + rax.toString());
-        			if (rax.getRange().getShortForm().equals("anyURI")) {
-        				found = true;
-        			}
-        		}
-        	}
-
-
-        	if (found) {
-        		
-        		OWLAnnotationValue av = ax1.getValue();
-        		String ann_val = "";
-        		if (av.asIRI().isPresent()) {
-        			ann_val = av.asIRI().get().getShortForm();        			
-        		} else {
-        			ann_val = av.toString();
-        		}
-
-        		String val = ax1.getProperty().getIRI().getShortForm() + "|"
-        				+ ann_val;
-        		OWLLiteral lit = df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL);
-        		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(DEP_ASSOC, class_to_retire.getIRI(), lit);
-        		changes.add(new AddAxiom(ontology, ax));
-
-        		changes.add(new RemoveAxiom(ontology, ax1));
-        	}
-        }
-        
-        for (OWLAnnotationProperty p : fixups.keySet()) {
-        	for (String s : fixups.get(p)) {
-        		OWLLiteral val1 = df.getOWLLiteral(s, OWL2Datatype.RDF_PLAIN_LITERAL);
-        		OWLAxiom ax1 = df.getOWLAnnotationAssertionAxiom(p, class_to_retire.getIRI(), val1);
-        		changes.add(new AddAxiom(ontology, ax1));        		
-        	}        	
-        }
-        if (currentTab().isWorkFlowManager()) {
-        	changes.add(new AddAxiom(ontology,
-        			df.getOWLSubClassOfAxiom(class_to_retire, RETIRE_ROOT)));
-        	changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(class_to_retire.getIRI())));
-        	if (DEPR_CONCEPT_STATUS_PROP != null) {
-        		changes.add(new AddAxiom(ontology,
-        				df.getOWLAnnotationAssertionAxiom(DEPR_CONCEPT_STATUS_PROP, class_to_retire.getIRI(),
-        						df.getOWLLiteral(DEPR_CONCEPT_STATUS_VALUE, OWL2Datatype.RDF_PLAIN_LITERAL))));
-        		
-        	}
-        } else {
-        	changes.add(new AddAxiom(ontology,
-        			df.getOWLSubClassOfAxiom(class_to_retire, PRE_RETIRE_ROOT))); 
-        }
-        
-        getOWLModelManager().applyChanges(changes);
-        
-        return true;
-        
         //current_op.setRetireParents(old_parents);
     }
     
@@ -1004,13 +1097,14 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     		return false;    				
     	}
 
+    	if (clientSession.hasActiveClient()) {
 			ProjectId projectId = clientSession.getActiveProject();
 			if (projectId == null) {
 				return false;
 			}
-
-    	boolean can = clientSession.getActiveClient().getConfig().canPerformProjectOperation(
-    		NCIEditTabConstants.RETIRE.getId(), projectId);
+	
+	    	boolean can = clientSession.getActiveClient().getConfig().canPerformProjectOperation(
+	    		NCIEditTabConstants.RETIRE.getId(), projectId);
 			if (!can) {
 				return false;
 			}
@@ -1020,6 +1114,10 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 			} else {
 				return !isRetired(cls);
 			}
+    	} else {
+    		// Not connect to a server
+    		return true;
+    	}
     }
     
     public void retire(OWLClass selectedClass) {
@@ -1447,6 +1545,10 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     @Override
     public void stateChanged(HistoryManager source) {
     	if (!getOWLEditorKit().getModelManager().getConnectionMode().equals(ConnectionMode.CLIENTSERVER)) {
+    		if (current_op.getType().name().equals("RETIRE")) {
+    			setCurrentlyEditing(current_op.getCurrentlyEditing(), true);
+    			classModified();
+    		}
     		return;    		
     	}
     	if (this.getOWLEditorKit().getModelManager().getExplanationManager().getIsRunning()) {
