@@ -575,13 +575,18 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	    		}
 	    		props = ontology.getAnnotationAssertionAxioms(target.getIRI());    		
 	    		for (OWLAnnotationAssertionAxiom p : props) {
-	    			if (p.getProperty().equals(MERGE_SOURCE)) {
+	    			//Fix issue #569 - Optional project configuration properties
+	    			if (MERGE_SOURCE != null && p.getProperty().equals(MERGE_SOURCE)) {
 	    				changes.add(new RemoveAxiom(ontology, p));
 	    			}
 	    			
 	    		}
-	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+	    		//Fix issue #569 - Optional project configuration properties
+	    		/*if (RETIRE_ROOT != null) {
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
 						df.getOWLSubClassOfAxiom(source, RETIRE_ROOT))); 
+	    		}*/
+	    		addAxiomForOWLSubClass(changes, getOWLModelManager().getActiveOntology(), source, RETIRE_ROOT);
 				// finalize merge
 				// remove parents and roles, OLD_ROLE OLD_PARENT
 				// retarget inbound roles and children
@@ -610,8 +615,8 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	    		String designnote = "See '" + getRDFSLabel(target).get() + "(" + target.getIRI().getShortForm() + ")" + "'";
 	    		
 	    		List<OWLOntologyChange> dcs = addNotes(editornote, designnote, source);
-	    		
-	    		if (dcs.isEmpty()) {
+	    		//Fix issue #569 - Optional project configuration properties
+	    		if (dcs.isEmpty() && EDITOR_NOTE != null && DESIGN_NOTE != null) {
 	    			fireChange(new EditTabChangeEvent(this, ComplexEditType.MERGE));
 					return false;
 	    		}
@@ -622,22 +627,34 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	
 	    		// if workflow modeler, add MERGE_TARGET/SOURCE props and tree under pre-merged    		
 	    		if (!isWorkFlowManager()) {
-	
-	    			OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(MERGE_TARGET, 
+	    			//Fix issue #569 - Optional project configuration properties
+		    		/*OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(MERGE_TARGET, 
 	    					source.getIRI(), 
 	    					df.getOWLLiteral(target.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
-	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
+	    			addAxiomForOWLAnnotationAssertion(changes, getOWLModelManager().getActiveOntology(), MERGE_TARGET, 
+	    					source.getIRI(), df.getOWLLiteral(target.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
 	
-	    			ax = df.getOWLAnnotationAssertionAxiom(MERGE_SOURCE, 
+	    			/*ax = df.getOWLAnnotationAssertionAxiom(MERGE_SOURCE, 
 	    					target.getIRI(), 
 	    					df.getOWLLiteral(source.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
-	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
-	
-	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
-	    					df.getOWLSubClassOfAxiom(source, PRE_MERGE_ROOT))); 
+	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
+	    			addAxiomForOWLAnnotationAssertion(changes, getOWLModelManager().getActiveOntology(), MERGE_SOURCE,
+	    					target.getIRI(), df.getOWLLiteral(source.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL));
+	    			
+	    			//Fix issue #569 - Optional project configuration properties
+	    			/*if (PRE_MERGE_ROOT != null) {
+		    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+		    					df.getOWLSubClassOfAxiom(source, PRE_MERGE_ROOT))); 
+	    			}*/
+	    			addAxiomForOWLSubClass(changes, getOWLModelManager().getActiveOntology(), source, PRE_MERGE_ROOT);
 	    		} else {
-	    			changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
+	    			//Fix issue #569 - Optional project configuration properties
+	    			/*if (RETIRE_ROOT != null) {
+	    				changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(),
 	    					df.getOWLSubClassOfAxiom(source, RETIRE_ROOT)));
+	    			}*/
+	    			addAxiomForOWLSubClass(changes, getOWLModelManager().getActiveOntology(), source, RETIRE_ROOT);
 	    			changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(source.getIRI())));
 	    			// finalize merge
 	    			// remove parents and roles, OLD_ROLE OLD_PARENT
@@ -798,19 +815,31 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     public List<OWLOntologyChange> addNotes(String editornote, String designnote, OWLClass cls) {
     	OWLDataFactory df = getOWLModelManager().getOWLDataFactory();
     	List<OWLOntologyChange> changes = new ArrayList<OWLOntologyChange>();
+    	
+    	//Fix issue #569 - Optional project configuration properties
+    	if (EDITOR_NOTE == null && DESIGN_NOTE == null) {
+    		return changes;
+    	} 
+    	
     	NoteDialog dlg = new NoteDialog(currentTab(), editornote, designnote);
-
+    	OWLLiteral val = null;
     	if (dlg.OKBtnPressed()) {
+    		if (EDITOR_NOTE != null) {
     		editornote = dlg.getEditorNote();
-    		designnote = dlg.getDesignNote();
-
-    		OWLLiteral val = df.getOWLLiteral(editornote, OWL2Datatype.RDF_PLAIN_LITERAL);
-    		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(EDITOR_NOTE, cls.getIRI(), val);
-    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
-
-    		val = df.getOWLLiteral(designnote, OWL2Datatype.RDF_PLAIN_LITERAL);
-    		ax = df.getOWLAnnotationAssertionAxiom(DESIGN_NOTE, cls.getIRI(), val);
-    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));
+	    		val = df.getOWLLiteral(editornote, OWL2Datatype.RDF_PLAIN_LITERAL);
+	    		//Fix issue #569 - Optional project configuration properties
+	    		/*OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(EDITOR_NOTE, cls.getIRI(), val);
+	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
+	    		addAxiomForOWLAnnotationAssertion(changes, getOWLModelManager().getActiveOntology(), EDITOR_NOTE, cls.getIRI(), val);
+    		}
+    		if (DESIGN_NOTE != null) {
+	    		designnote = dlg.getDesignNote();
+	    		val = df.getOWLLiteral(designnote, OWL2Datatype.RDF_PLAIN_LITERAL);
+	    		//Fix issue #569 - Optional project configuration properties
+	    		/*ax = df.getOWLAnnotationAssertionAxiom(DESIGN_NOTE, cls.getIRI(), val);
+	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
+	    		addAxiomForOWLAnnotationAssertion(changes, getOWLModelManager().getActiveOntology(), DESIGN_NOTE, cls.getIRI(), val);
+    		}
     	}
     	return changes;
 
@@ -823,14 +852,23 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	    	String user = clientSession.getActiveClient().getUserInfo().getName().toString();
 	    	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
 	    	
-	    	String editornote = "Retired on: " + timestamp + " by " + user;
-	        String designnote = "Retired on: " + timestamp;
+	    	//Fix issue #569 - Optional project configuration properties
+	    	String editornote = null;
+	    	if (EDITOR_NOTE != null) {
+	    		editornote = "Retired on: " + timestamp + " by " + user;
+	    	}
+	        String designnote = null;
+	        if (DESIGN_NOTE != null) {
+	        	designnote = "Retired on: " + timestamp;
+	        }
 	        
 	        
 	        OWLClass class_to_retire = current_op.getRetireClass();
 	        
 	    	List<OWLOntologyChange> changes = addNotes(editornote, designnote, class_to_retire);
-	    	if (changes.isEmpty()) {
+	    	
+	    	//Fix issue #569 - Optional project configuration properties
+	    	if (changes.isEmpty() && EDITOR_NOTE != null && DESIGN_NOTE != null) {
 	    		fireChange(new EditTabChangeEvent(this, ComplexEditType.RETIRE));
 	    		//current_op.setRetireParents(old_parents);
 	    		return false;
@@ -906,8 +944,12 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	        	}        	
 	        }
 	        if (currentTab().isWorkFlowManager()) {
-	        	changes.add(new AddAxiom(ontology,
+	        	//Fix issue #569 - Optional project configuration properties
+	        	/*if (RETIRE_ROOT != null) {
+	        		changes.add(new AddAxiom(ontology,
 	        			df.getOWLSubClassOfAxiom(class_to_retire, RETIRE_ROOT)));
+	        	}*/
+	        	addAxiomForOWLSubClass(changes, ontology, class_to_retire, RETIRE_ROOT);
 	        	changes.add(new AddAxiom(ontology, df.getDeprecatedOWLAnnotationAssertionAxiom(class_to_retire.getIRI())));
 	        	if (DEPR_CONCEPT_STATUS_PROP != null) {
 	        		changes.add(new AddAxiom(ontology,
@@ -916,8 +958,12 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	        		
 	        	}
 	        } else {
-	        	changes.add(new AddAxiom(ontology,
+	        	//Fix issue #569 - Optional project configuration properties
+	        	/*if (PRE_RETIRE_ROOT != null) {
+	        		changes.add(new AddAxiom(ontology,
 	        			df.getOWLSubClassOfAxiom(class_to_retire, PRE_RETIRE_ROOT))); 
+	        	}*/
+	        	addAxiomForOWLSubClass(changes, ontology, class_to_retire, PRE_RETIRE_ROOT);
 	        }
 	        
 	        getOWLModelManager().applyChanges(changes);
@@ -1020,6 +1066,21 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
         //current_op.setRetireParents(old_parents);
     }
     
+    //Fix issue #569 - Optional project configuration properties
+    private void addAxiomForOWLSubClass(List<OWLOntologyChange> changes,  OWLOntology ontology, OWLClass subClass, OWLClass superClass) {
+    	if (superClass != null) {
+    		changes.add(new AddAxiom(ontology, getOWLModelManager().getOWLDataFactory().getOWLSubClassOfAxiom(subClass, superClass))); 	
+    	}
+    }
+    
+    //Fix issue #569 - Optional project configuration properties
+    private void addAxiomForOWLAnnotationAssertion (List<OWLOntologyChange> changes, OWLOntology ontology, OWLAnnotationProperty prop, OWLAnnotationSubject subject, OWLAnnotationValue value) {
+    	if (prop != null) {
+    		OWLAxiom ax = getOWLModelManager().getOWLDataFactory().getOWLAnnotationAssertionAxiom(prop, subject, value);
+    		changes.add(new AddAxiom(ontology, ax)); 
+    	}
+    }
+    
     private List<OWLOntologyChange> addParentRoleAssertions(List<OWLOntologyChange> changes, OWLClassExpression exp, OWLClass cls) {
     	OWLModelManager mngr = getOWLModelManager();
     	OWLDataFactory df = mngr.getOWLDataFactory();
@@ -1028,11 +1089,13 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     			// noop
     		} else {
     			OWLClass ocl  = (OWLClass) exp;
-    			if (!ocl.equals(PRE_MERGE_ROOT)) {
+    			//Fix issue #569 - Optional project configuration properties
+    			if (PRE_MERGE_ROOT != null && !ocl.equals(PRE_MERGE_ROOT)) {
     				String name = ocl.getIRI().getShortForm();
     				OWLLiteral val = df.getOWLLiteral(name, OWL2Datatype.RDF_PLAIN_LITERAL);
-    				OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(DEP_PARENT, cls.getIRI(), val);
-    				changes.add(new AddAxiom(ontology, ax)); 
+    				/*OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(DEP_PARENT, cls.getIRI(), val);
+    				changes.add(new AddAxiom(ontology, ax));*/
+    				addAxiomForOWLAnnotationAssertion(changes, ontology, DEP_PARENT, cls.getIRI(), val);
     			}
     		}
     	} else if (exp instanceof OWLQuantifiedObjectRestriction) {
@@ -1075,10 +1138,11 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     }
     
     public boolean isUneditableRoot(OWLClass cls) {
-    	if (cls.equals(PRE_RETIRE_ROOT) ||
-    			cls.equals(PRE_MERGE_ROOT) ||
-    			cls.equals(RETIRE_ROOT) ||
-    			cls.equals(RETIRE_CONCEPTS_ROOT)) {
+    	//Fix issue #569 - Optional project configuration properties
+    	if ((PRE_RETIRE_ROOT != null && cls.equals(PRE_RETIRE_ROOT)) ||
+    			(PRE_MERGE_ROOT != null && cls.equals(PRE_MERGE_ROOT)) ||
+    			(RETIRE_ROOT != null && cls.equals(RETIRE_ROOT)) ||
+    			(RETIRE_CONCEPTS_ROOT != null && cls.equals(RETIRE_CONCEPTS_ROOT))) {
     		return true;    				
     	}
     	return false;
@@ -1415,10 +1479,13 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     	
     	if (clone_p) {
     		
-    	} else if (hasActiveClient()){
+    	} 
+    	//Fix issue #569 - Optional project configuration properties
+    	else if (hasActiveClient() && SPLIT_FROM != null){
     		OWLLiteral fromCode = df.getOWLLiteral(selectedClass.getIRI().getShortForm(), OWL2Datatype.RDF_PLAIN_LITERAL);
-    		OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(SPLIT_FROM, newClass.getIRI(), fromCode);
-    		changes.add(new AddAxiom(ontology, ax));
+    		/*OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(SPLIT_FROM, newClass.getIRI(), fromCode);
+    		changes.add(new AddAxiom(ontology, ax));*/
+    		addAxiomForOWLAnnotationAssertion(changes, ontology, SPLIT_FROM, newClass.getIRI(), fromCode);
     	}
     	
     	Map<OWLEntity, IRI> replacementIRIMap = new HashMap<>();
@@ -1472,15 +1539,18 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     			OWLSubClassOfAxiom ax = df.getOWLSubClassOfAxiom(newClass, selectedClass);
     			changes.add(new AddAxiom(mngr.getActiveOntology(), ax));
     			
-    			if (SEMANTIC_TYPE != null) {
-    				Optional<OWLAnnotationValue> sem_typ = this.getSemanticType(selectedClass);
-    				if (sem_typ.isPresent()) {
-    					OWLAnnotationValue sem_typ_val = sem_typ.get();
-    					OWLAxiom sem_typ_ax = 
-    							df.getOWLAnnotationAssertionAxiom(SEMANTIC_TYPE, newClass.getIRI(), sem_typ_val);
-    					changes.add(new AddAxiom(mngr.getActiveOntology(), sem_typ_ax));
-    				}
-    			}
+    			//Fix issue #569 - Optional project configuration properties
+    			//if (SEMANTIC_TYPE != null) {
+				Optional<OWLAnnotationValue> sem_typ = this.getSemanticType(selectedClass);
+				if (sem_typ.isPresent()) {
+					/*OWLAnnotationValue sem_typ_val = sem_typ.get();
+					OWLAxiom sem_typ_ax = 
+							df.getOWLAnnotationAssertionAxiom(SEMANTIC_TYPE, newClass.getIRI(), sem_typ_val);
+					changes.add(new AddAxiom(mngr.getActiveOntology(), sem_typ_ax));*/
+					addAxiomForOWLAnnotationAssertion(changes, mngr.getActiveOntology(), SEMANTIC_TYPE, newClass.getIRI(),
+							sem_typ.get());
+				}
+    			//}
     		}
     		if (dontApply) {
     			batch_changes.addAll(changes);

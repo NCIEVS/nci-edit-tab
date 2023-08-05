@@ -462,31 +462,36 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 		
 		//Add FULL SYN
 		OWLAnnotationProperty full_syn = NCIEditTab.currentTab().getFullSyn();
+		OWLAxiom new_axiom = null;
+		Set<OWLAnnotation> anns = null;
+		Set<OWLAnnotationProperty> req_props = null;
+		OWLAxiom new_new_axiom = null;
+		//Fix issue #569 - Optional project configuration properties
+		if (full_syn != null) {			
+			new_axiom = df.getOWLAnnotationAssertionAxiom(full_syn, newClass.getIRI(), pref_name_val);
+			
+			anns = new HashSet<OWLAnnotation>();
+			req_props = NCIEditTab.currentTab().getRequiredAnnotationsForAnnotation(full_syn);
+			
+			if (req_props != null) {
+				for (OWLAnnotationProperty prop : req_props) {
+					
+					String val = NCIEditTab.currentTab().getDefaultValue(NCIEditTab.currentTab().getDataType(prop), NCIEditTabConstants.DEFAULT_SOURCE_NEW_CLASS);
+					if (val == null) {
+						val = "No_Default";
 		
-		OWLAxiom new_axiom = df.getOWLAnnotationAssertionAxiom(full_syn, newClass.getIRI(), pref_name_val);
+					}
+					OWLAnnotation new_ann = df.getOWLAnnotation(prop, df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL));
+					anns.add(new_ann);
 		
-		Set<OWLAnnotation> anns = new HashSet<OWLAnnotation>();
-		Set<OWLAnnotationProperty> req_props = NCIEditTab.currentTab().getRequiredAnnotationsForAnnotation(full_syn);
 		
-		if (req_props != null) {
-			for (OWLAnnotationProperty prop : req_props) {
-				
-				String val = NCIEditTab.currentTab().getDefaultValue(NCIEditTab.currentTab().getDataType(prop), NCIEditTabConstants.DEFAULT_SOURCE_NEW_CLASS);
-				if (val == null) {
-					val = "No_Default";
-	
 				}
-				OWLAnnotation new_ann = df.getOWLAnnotation(prop, df.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL));
-				anns.add(new_ann);
-	
-	
 			}
+			
+			new_new_axiom = new_axiom.getAxiomWithoutAnnotations().getAnnotatedAxiom(anns);
+					
+			changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
 		}
-		
-		OWLAxiom new_new_axiom = new_axiom.getAxiomWithoutAnnotations().getAnnotatedAxiom(anns);
-				
-		changes.add(new AddAxiom(mngr.getActiveOntology(), new_new_axiom));
-		
 		if (!batch_mode && defComplexProp != null) {
 
 			//Add DEFINITION

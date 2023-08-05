@@ -380,10 +380,20 @@ public class EditPanel extends JPanel {
             	if (shouldSave()) {
             		PropertyCheckUtil propCheckUtil = new PropertyCheckUtil();
             		if (NCIEditTab.currentTab().hasActiveClient()) {
-            		if (propCheckUtil.syncFullSyn(NCIEditTab.currentTab().getCurrentlyEditing())
-            				&& propCheckUtil.syncDefinition(NCIEditTab.currentTab().getCurrentlyEditing())
-            				&& NCIEditTab.currentTab().isLogicallyCorrect()) {
-
+            			//Fix issue #569 - Optional project configuration properties
+            			boolean shouldContinue = true;
+            			if (NCIEditTab.currentTab().getFullSyn() != null) {
+            				shouldContinue = propCheckUtil.syncFullSyn(NCIEditTab.currentTab().getCurrentlyEditing());
+            				if (!shouldContinue) return;
+            			}
+            			if (NCIEditTab.currentTab().getDefinition() != null) { 
+            				shouldContinue = propCheckUtil.syncDefinition(NCIEditTab.currentTab().getCurrentlyEditing());
+            				if (!shouldContinue) return;
+            			}
+            			if (!NCIEditTab.currentTab().isLogicallyCorrect()) {
+            				return;
+            			}
+            			
             			if (!newPref.equals("")) {
             				propCheckUtil.syncPrefName(newPref);                		
             			}
@@ -392,7 +402,7 @@ public class EditPanel extends JPanel {
             				origPref = prefNameText.getText();
             				NCIEditTab.currentTab().refreshNavTree();
             			}
-            		}
+            	
             		} else {
             			// Not connect to a server
             			if (NCIEditTab.currentTab().commitChanges(true)) {
@@ -453,4 +463,10 @@ public class EditPanel extends JPanel {
     	saveButton.setEnabled(false);
     	cancelButton.setEnabled(false);    	
     }
+    
+    public void enableCancelButtonOnly() {
+    	saveButton.setEnabled(false);
+    	cancelButton.setEnabled(true);    	
+    }
+    
 }

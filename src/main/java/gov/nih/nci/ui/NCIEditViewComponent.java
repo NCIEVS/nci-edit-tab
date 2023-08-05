@@ -65,7 +65,13 @@ public class NCIEditViewComponent extends OWLClassAnnotationsViewComponent imple
 				if (!(NCIEditTab.currentTab().isRetired(NCIEditTab.currentTab().getCurrentOp().getCurrentlyEditing()) ||
 						NCIEditTab.currentTab().isPreRetired(NCIEditTab.currentTab().getCurrentOp().getCurrentlyEditing())))
 				{
-					editPanel.enableButtons();
+					if (NCIEditTab.currentTab().hasActiveClient()) {
+						editPanel.enableButtons();
+					} else if (NCIEditTab.currentTab().getCurrentOp().isRetiring()) {
+						editPanel.enableButtons();
+					} else {
+						editPanel.enableCancelButtonOnly();
+					}
 					NCIEditTab.currentTab().setEditInProgress(true);
 					NCIEditTab.currentTab().setCurrentlyEditing(editPanel.getSelectedClass(), true);
 				} else {
