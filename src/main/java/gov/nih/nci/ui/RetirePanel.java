@@ -154,16 +154,22 @@ public class RetirePanel extends JPanel {
     				warnUsages();
     			} else if (retireButton.getText().equals("Save")) {
     				// TODO: refactor and move type check to edit tab
-    	
-    				if (NCIEditTab.currentTab().commitChanges(true)) {
-    					upperPanelList.setRootObject(null);
+    				//YX - 20230828: If it is in file mode, do not commitChanges
+    				if (NCIEditTab.currentTab().hasActiveClient()) {
+	    				if (NCIEditTab.currentTab().commitChanges(true)) {
+	    					upperPanelList.setRootObject(null);
+	    					usage_panel.setOWLEntity(null, false);
+	    					disableButtons();
+	    					NCIEditTab.currentTab().selectClass(classToRetire);
+	    					NCIEditTab.currentTab().refreshNavTree();
+	    					NCIEditTab.currentTab().completeRetire();
+	    					NCIEditTab.currentTab().fireChange(new EditTabChangeEvent(NCIEditTab.currentTab(), 
+	    							ComplexEditType.READ));
+	    				}
+    				} else {
+						upperPanelList.setRootObject(null);
     					usage_panel.setOWLEntity(null, false);
     					disableButtons();
-    					NCIEditTab.currentTab().selectClass(classToRetire);
-    					NCIEditTab.currentTab().refreshNavTree();
-    					NCIEditTab.currentTab().completeRetire();
-    					NCIEditTab.currentTab().fireChange(new EditTabChangeEvent(NCIEditTab.currentTab(), 
-    							ComplexEditType.READ));
     				}
     			} else if (retireButton.getText().equals("Approve")) {
     				approveRetire();
