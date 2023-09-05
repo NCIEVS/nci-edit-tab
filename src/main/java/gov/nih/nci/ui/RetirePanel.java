@@ -170,6 +170,11 @@ public class RetirePanel extends JPanel {
 						upperPanelList.setRootObject(null);
     					usage_panel.setOWLEntity(null, false);
     					disableButtons();
+    					NCIEditTab.currentTab().selectClass(classToRetire);
+    					NCIEditTab.currentTab().refreshNavTree();
+    					NCIEditTab.currentTab().completeRetire();
+    					NCIEditTab.currentTab().fireChange(new EditTabChangeEvent(NCIEditTab.currentTab(), 
+    							ComplexEditType.READ));
     				}
     			} else if (retireButton.getText().equals("Approve")) {
     				approveRetire();
