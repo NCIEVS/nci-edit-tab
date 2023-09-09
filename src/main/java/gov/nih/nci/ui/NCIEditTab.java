@@ -114,6 +114,8 @@ import gov.nih.nci.ui.dialog.NoteDialog;
 import gov.nih.nci.ui.event.ComplexEditType;
 import gov.nih.nci.ui.event.EditTabChangeEvent;
 import gov.nih.nci.ui.event.EditTabChangeListener;
+import gov.nih.nci.ui.event.PreferencesChangeEvent;
+import gov.nih.nci.ui.event.PreferencesChangeListener;
 import gov.nih.nci.utils.CharMapper;
 import gov.nih.nci.utils.CuratorChecks;
 import gov.nih.nci.utils.NCIClassSearcher;
@@ -420,21 +422,36 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 				ontology.getOntologyID().getOntologyIRI().get().getIRIString()));
 	}
 	
-	private static ArrayList<EditTabChangeListener> event_listeners = new ArrayList<EditTabChangeListener>();
+	private static ArrayList<EditTabChangeListener> ETCevent_listeners = new ArrayList<EditTabChangeListener>();
 		
 	public static void addListener(EditTabChangeListener l) {
-		event_listeners.add(l);
+		ETCevent_listeners.add(l);
 	}
 	
 	public static void removeListener(EditTabChangeListener l) {
-		event_listeners.remove(l);
+		ETCevent_listeners.remove(l);
 	}
 	
 	public void fireChange(EditTabChangeEvent ev) {		
-		for (EditTabChangeListener l : event_listeners) {
+		for (EditTabChangeListener l : ETCevent_listeners) {
 			l.handleChange(ev);
 		}		
-	}	
+	}
+	
+	private static ArrayList<PreferencesChangeListener> Prefevent_listeners = new ArrayList<PreferencesChangeListener>();
+	
+	public static void addPrefListener(PreferencesChangeListener l) {
+		Prefevent_listeners.add(l);
+	}
+	
+	public static void removePrefListener(PreferencesChangeListener l) {
+		Prefevent_listeners.remove(l);
+	}
+	public void fireChange(PreferencesChangeEvent ev) {		
+		for (PreferencesChangeListener l : Prefevent_listeners) {
+			l.handleChange(ev);
+		}		
+	}
 	
 	private List<OWLAnnotationProperty> complex_properties = new ArrayList<OWLAnnotationProperty>();
 	

@@ -101,6 +101,7 @@ public class RetirePanel extends JPanel {
         lowerComp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         lowerPanel.add(lowerComp);
         
+        
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPanel, lowerPanel);
 		splitPane.setOneTouchExpandable(true);
 		splitPane.setDividerLocation(280);

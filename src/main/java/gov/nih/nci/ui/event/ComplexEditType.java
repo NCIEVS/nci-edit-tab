@@ -15,5 +15,6 @@ public enum ComplexEditType {
 	INIT_PROPS,
 	COMMIT,
 	RESET,
-	CREATE
+	CREATE,
+	PREFMODIFY
 }

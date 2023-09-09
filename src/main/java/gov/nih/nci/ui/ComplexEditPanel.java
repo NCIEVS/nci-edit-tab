@@ -322,6 +322,46 @@ public class ComplexEditPanel extends JPanel {
     	return radioButtonPanel;
     }
     
+    public void setRadioButtons() {
+    	radioButtonGroup.clearSelection();
+    	if(NCIEditTabPreferences.getFnSplit()) {
+    		radioButtonGroup.add(splitButton);
+    		radioButtonPanel.add(splitButton);
+    		splitButton.setEnabled(true);
+    	} else {
+    		splitButton.setEnabled(false);
+    		radioButtonGroup.remove(splitButton);
+    		radioButtonPanel.remove(splitButton);
+    	}
+    	if(NCIEditTabPreferences.getFnCopy()) {
+    		radioButtonGroup.add(cloneButton);
+    		radioButtonPanel.add(cloneButton);
+    		cloneButton.setEnabled(true);
+    	} else {
+    		cloneButton.setEnabled(false);
+    		radioButtonGroup.remove(cloneButton);
+    		radioButtonPanel.remove(cloneButton);
+    	}
+    	if(NCIEditTabPreferences.getFnMerge()) {
+    		radioButtonGroup.add(mergeButton);
+    		radioButtonPanel.add(mergeButton);
+    		mergeButton.setEnabled(true);
+    	} else {
+    		mergeButton.setEnabled(false);
+    		radioButtonGroup.remove(mergeButton);
+    		radioButtonPanel.remove(mergeButton);
+    	}
+    	if(NCIEditTabPreferences.getFnDualEdits()) {
+    		radioButtonGroup.add(dualButton);
+    		radioButtonPanel.add(dualButton);
+    		dualButton.setEnabled(true);
+    	} else {
+    		dualButton.setEnabled(false);
+    		radioButtonGroup.remove(dualButton);
+    		radioButtonPanel.remove(dualButton);
+    	}
+    }
+    
     public boolean isSplitBtnSelected() {
     	return splitButton.isSelected();
     }

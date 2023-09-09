@@ -8,6 +8,10 @@ import javax.swing.JLabel;
 import org.protege.editor.core.ui.preferences.PreferencesLayoutPanel;
 import org.protege.editor.owl.ui.preferences.OWLPreferencesPanel;
 
+import gov.nih.nci.ui.event.ComplexEditType;
+import gov.nih.nci.ui.event.EditTabChangeEvent;
+import gov.nih.nci.ui.event.PreferencesChangeEvent;
+
 public class NCIEditTabPreferencesPanel extends OWLPreferencesPanel {
 	//Add comments here
 	private static final long serialVersionUID = 1L;
@@ -74,5 +78,9 @@ public class NCIEditTabPreferencesPanel extends OWLPreferencesPanel {
     	NCIEditTabPreferences.setFnMerge(cbMerge.isSelected());
     	NCIEditTabPreferences.setFnDualEdits(cbDualEdits.isSelected());
     	NCIEditTabPreferences.setFnRetire(cbRetire.isSelected());
+    	
+    	NCIEditTab.currentTab().fireChange(new PreferencesChangeEvent(NCIEditTab.currentTab(), 
+				ComplexEditType.PREFMODIFY));
+    	 
     }
 }
