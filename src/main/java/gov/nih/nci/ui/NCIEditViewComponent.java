@@ -67,13 +67,15 @@ public class NCIEditViewComponent extends OWLClassAnnotationsViewComponent imple
 				{
 					if (NCIEditTab.currentTab().hasActiveClient()) {
 						editPanel.enableButtons();
+						NCIEditTab.currentTab().setEditInProgress(true);
+						NCIEditTab.currentTab().setCurrentlyEditing(editPanel.getSelectedClass(), true);
 					} else if (NCIEditTab.currentTab().getCurrentOp().isRetiring()) {
 						editPanel.enableButtons();
 					} else {
 						editPanel.enableCancelButtonOnly();
 					}
-					NCIEditTab.currentTab().setEditInProgress(true);
-					NCIEditTab.currentTab().setCurrentlyEditing(editPanel.getSelectedClass(), true);
+					//NCIEditTab.currentTab().setEditInProgress(true);
+					//NCIEditTab.currentTab().setCurrentlyEditing(editPanel.getSelectedClass(), true);
 				} else {
 					getOWLEditorKit().getWorkspace().getViewManager().bringViewToFront(
 							"nci-edit-tab.RetireView");
