@@ -382,9 +382,11 @@ RetireClassTarget, AddComplexTarget, SelectionDriver {
 		NCIEditTab.currentTab().disableBatchMode();
 		if (newCls != null) {
 			getTree().setSelectedOWLObject(newCls);
-			NCIEditTab.currentTab().setCurrentlyEditing(newCls, true);
-			NCIEditTab.currentTab().setNew(true);
-			NCIEditTab.currentTab().classModified();
+			if (NCIEditTab.currentTab().hasActiveClient()) {
+				NCIEditTab.currentTab().setCurrentlyEditing(newCls, true);
+				NCIEditTab.currentTab().setNew(true);
+				NCIEditTab.currentTab().classModified();
+			}
 		}
 
 	}
