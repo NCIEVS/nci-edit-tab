@@ -5,18 +5,25 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.KeyboardFocusManager;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -245,7 +252,33 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
         propertyTable.setAutoCreateRowSorter(true);
         tableModel.setPropertyTable(propertyTable);
         
-        propertyTable.setTransferHandler(null);
+        propertyTable.setTransferHandler(new TransferHandler() {
+        	@Override
+            public int getSourceActions(JComponent c) {
+                return COPY; // Supports copying to clipboard
+            }
+        	
+        	 @Override
+        	    protected Transferable createTransferable(JComponent c) {
+        	        // Return whatever data is currently "selected" in your component
+        	        JTable tab = (JTable) c;
+        	        String res = "";
+        	        int[] rows = tab.getSelectedRows();
+        	        for (int i : rows) {
+        	        	Object obj = tab.getModel().getValueAt(i, 0);
+        	        	res += (String) obj;
+        	        	res += "\n";
+        	        	
+        	        }
+        		 
+        		 return new StringSelection(res);
+        	    }
+        		
+        	
+        	
+        	
+        });
+        
         
         
         ColumnListener cl = new ColumnListener(){
