@@ -6,10 +6,15 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.KeyboardFocusManager;
+import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -31,6 +36,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 import javax.swing.event.ChangeEvent;
@@ -238,6 +244,8 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
         prefs.putStringList(propName, colNames1);
     }
     
+    private TransferHandler th = null;
+    
     private void createUI() {
     	setLayout(new BorderLayout());
     	
@@ -252,32 +260,60 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
         propertyTable.setAutoCreateRowSorter(true);
         tableModel.setPropertyTable(propertyTable);
         
-        propertyTable.setTransferHandler(new TransferHandler() {
-        	@Override
-            public int getSourceActions(JComponent c) {
-                return COPY; // Supports copying to clipboard
-            }
-        	
-        	 @Override
-        	    protected Transferable createTransferable(JComponent c) {
-        	        // Return whatever data is currently "selected" in your component
-        	        JTable tab = (JTable) c;
-        	        String res = "";
-        	        int[] rows = tab.getSelectedRows();
-        	        for (int i : rows) {
-        	        	Object obj = tab.getModel().getValueAt(i, 0);
-        	        	res += (String) obj;
-        	        	res += "\n";
-        	        	
-        	        }
-        		 
-        		 return new StringSelection(res);
-        	    }
-        		
-        	
-        	
-        	
-        });
+        
+        th = new TransferHandler() {
+			@Override
+			public int getSourceActions(JComponent c) {
+				return COPY_OR_MOVE;
+			}
+
+			@Override
+			protected Transferable createTransferable(JComponent c) {
+				
+				if (c instanceof JTable) {
+				
+					// Return whatever data is currently "selected" in your component
+					JTable tab = (JTable) c;
+					String res = "";
+					int[] rows = tab.getSelectedRows();
+					for (int i : rows) {
+						Object obj = tab.getModel().getValueAt(i, 0);
+						res += (String) obj;
+						res += "\n";
+
+					}
+
+					return new StringSelection(res);
+				}
+				
+				return null;
+				
+			}
+			
+			public void exportToClipboard(JComponent comp, Clipboard clip, int action) 
+					throws IllegalStateException {
+
+				if ((action == COPY || action == MOVE) && (getSourceActions(comp) & action) != 0) {
+
+					Transferable t = createTransferable(comp);
+					if (t != null) {
+						try {
+							clip.setContents(t, null);
+							exportDone(comp, t, action);
+							return;
+						} catch (IllegalStateException ise) {
+							exportDone(comp, t, NONE);
+							throw ise;
+						}
+					}
+				}
+				exportDone(comp, null, NONE);
+				}
+
+		};
+		
+		
+        
         
         
         
@@ -315,6 +351,12 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
         tableHeaderPanel.setVisible(false);        
         sp.setVisible(false);
         sp.setPreferredSize(new Dimension(180, 150));
+        
+        propertyTable.setTransferHandler(th);
+        
+        
+        
+        
         add(sp, BorderLayout.CENTER);
     }
     
@@ -334,6 +376,7 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
     	return null;
     }
     public void setSelectedCls(OWLClass cls) {
+    	
     	tableModel.setSelection(cls);
     	
     	if (tableModel.hasAnnotation()) {
@@ -356,6 +399,16 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
     		tableHeaderPanel.setVisible(false);
     		sp.setVisible(false);
     	}
+    	
+    	propertyTable.setTransferHandler(th);
+    	
+    	Action copyAction = TransferHandler.getCopyAction();
+    	
+    	KeyStroke copyKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_C, getToolkit().getMenuShortcutKeyMask());
+
+    	
+    	propertyTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(copyKeyStroke, "copy");
+    	propertyTable.getActionMap().put("copy", copyAction);
     	
     }
     
