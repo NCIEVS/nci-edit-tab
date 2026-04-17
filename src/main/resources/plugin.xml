@@ -98,7 +98,7 @@
         <headerColor value="@org.protege.ontologycolor"/>
         <category value="NCI Edit Tab"/>
         
-        <instantiationType value="eager"/>
+        <!-- instantiationType value="eager"/ -->
         
     </extension>
     

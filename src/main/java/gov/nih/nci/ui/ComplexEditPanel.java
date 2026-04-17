@@ -107,8 +107,7 @@ public class ComplexEditPanel extends JPanel {
         upperPanelClass.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         createUI();
     }
-
-
+    
     private void createUI() {
         setLayout(new BorderLayout());        
 

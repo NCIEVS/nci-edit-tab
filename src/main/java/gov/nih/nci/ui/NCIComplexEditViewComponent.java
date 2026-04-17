@@ -89,6 +89,17 @@ public class NCIComplexEditViewComponent extends OWLClassAnnotationsViewComponen
 			complexEditPanel.reset();
 			
 			
+		} else if (event.isType(ComplexEditType.INIT_PROPS)) {
+			NCIEditTab.removeListener(this);
+			
+			try {
+				this.remove(complexEditPanel);
+				initialiseClassView();
+				//complexEditPanel.resetProps();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
