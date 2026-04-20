@@ -275,12 +275,16 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
 					// Return whatever data is currently "selected" in your component
 					JTable tab = (JTable) c;
 					String res = "";
+					String lt = System.getProperty("line.separator");
 					int[] rows = tab.getSelectedRows();
 					for (int i : rows) {
 						Object obj = tab.getModel().getValueAt(i, 0);
 						res += (String) obj;
-						res += "\n";
+						res += lt;
 
+					}
+					if (rows.length == 1) {
+						res = res.substring(0, res.length() - lt.length());
 					}
 
 					return new StringSelection(res);
