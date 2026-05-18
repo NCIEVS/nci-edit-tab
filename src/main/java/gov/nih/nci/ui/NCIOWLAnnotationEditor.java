@@ -36,6 +36,8 @@ import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
 
+import gov.nih.nci.utils.CharMapper;
+
 /**
  * Author: Matthew Horridge<br>
  * The University Of Manchester<br>
@@ -68,6 +70,8 @@ public class NCIOWLAnnotationEditor extends AbstractOWLObjectEditor<OWLAnnotatio
     private static String lastEditorName = "";
 
     private ChangeListener changeListener = event -> verify();
+    
+    private CharMapper mapper = new CharMapper();
     
     private InputVerificationStatusChangedListener mergedVerificationListener = new InputVerificationStatusChangedListener() {
 		
@@ -329,7 +333,7 @@ public class NCIOWLAnnotationEditor extends AbstractOWLObjectEditor<OWLAnnotatio
             if (obj != null) {
             	if (obj instanceof OWLLiteral) {
             		String val = ((OWLLiteral) obj).getLiteral();
-            		OWLAnnotationValue newobj = dataFactory.getOWLLiteral(val, OWL2Datatype.RDF_PLAIN_LITERAL);
+            		OWLAnnotationValue newobj = dataFactory.getOWLLiteral(mapper.fix(val), OWL2Datatype.RDF_PLAIN_LITERAL);
             		return dataFactory.getOWLAnnotation(property, newobj);
             	} else {
             		return dataFactory.getOWLAnnotation(property, obj);

@@ -853,7 +853,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     	if (dlg.OKBtnPressed()) {
     		if (EDITOR_NOTE != null) {
     		editornote = dlg.getEditorNote();
-	    		val = df.getOWLLiteral(editornote, OWL2Datatype.RDF_PLAIN_LITERAL);
+	    		val = df.getOWLLiteral(mapper.fix(editornote), OWL2Datatype.RDF_PLAIN_LITERAL);
 	    		//Fix issue #569 - Optional project configuration properties
 	    		/*OWLAxiom ax = df.getOWLAnnotationAssertionAxiom(EDITOR_NOTE, cls.getIRI(), val);
 	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
@@ -861,7 +861,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     		}
     		if (DESIGN_NOTE != null) {
 	    		designnote = dlg.getDesignNote();
-	    		val = df.getOWLLiteral(designnote, OWL2Datatype.RDF_PLAIN_LITERAL);
+	    		val = df.getOWLLiteral(mapper.fix(designnote), OWL2Datatype.RDF_PLAIN_LITERAL);
 	    		//Fix issue #569 - Optional project configuration properties
 	    		/*ax = df.getOWLAnnotationAssertionAxiom(DESIGN_NOTE, cls.getIRI(), val);
 	    		changes.add(new AddAxiom(getOWLModelManager().getActiveOntology(), ax));*/
@@ -3229,6 +3229,11 @@ public boolean canUnMerge(OWLClass cls) {
 				JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
 				return false; 
 			}
+    		if (ann_vals.get("Value").isEmpty()) {
+    			JOptionPane.showMessageDialog(this, "Value must be non null", "Warning", JOptionPane.WARNING_MESSAGE);
+				return false;
+    			
+    		}
 
     		OWLAxiom new_axiom = df.getOWLAnnotationAssertionAxiom(old_axiom.getProperty(), cls.getIRI(),
     				df.getOWLLiteral(mapper.fix(ann_vals.get("Value")), OWL2Datatype.RDF_PLAIN_LITERAL), new_anns);

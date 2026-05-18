@@ -27,7 +27,7 @@ public class CharMapper {
 			}
 			
 		}
-		return buf.toString();
+		return buf.toString().trim();
 	}
 	
 	public CharMapper() {
