@@ -3173,6 +3173,13 @@ public boolean canUnMerge(OWLClass cls) {
     		}
     		
     	}
+    	
+    	if (ann_vals.get("Value").isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Value must be non null", "Warning", JOptionPane.WARNING_MESSAGE);
+			return false;
+			
+		}
+
 
     	if (operation.equalsIgnoreCase(NCIEditTabConstants.EDIT)) {
 
@@ -3229,12 +3236,7 @@ public boolean canUnMerge(OWLClass cls) {
 				JOptionPane.showMessageDialog(this, "Value cannot contain special characters", "Warning", JOptionPane.WARNING_MESSAGE);
 				return false; 
 			}
-    		if (ann_vals.get("Value").isEmpty()) {
-    			JOptionPane.showMessageDialog(this, "Value must be non null", "Warning", JOptionPane.WARNING_MESSAGE);
-				return false;
-    			
-    		}
-
+    		
     		OWLAxiom new_axiom = df.getOWLAnnotationAssertionAxiom(old_axiom.getProperty(), cls.getIRI(),
     				df.getOWLLiteral(mapper.fix(ann_vals.get("Value")), OWL2Datatype.RDF_PLAIN_LITERAL), new_anns);
 
