@@ -442,7 +442,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	}
 	
 	public void fireChange(EditTabChangeEvent ev) {		
-		for (EditTabChangeListener l : ETCevent_listeners) {
+		for (EditTabChangeListener l : new ArrayList<>(ETCevent_listeners)) {
 			l.handleChange(ev);
 		}		
 	}
