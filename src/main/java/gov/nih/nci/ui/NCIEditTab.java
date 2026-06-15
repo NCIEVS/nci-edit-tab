@@ -3166,6 +3166,11 @@ public boolean canUnMerge(OWLClass cls) {
     	OWLDataFactory df = getOWLModelManager().getOWLDataFactory();
     	if (operation.equalsIgnoreCase(NCIEditTabConstants.EDIT) ||
     			operation.equalsIgnoreCase(NCIEditTabConstants.ADD)) {
+    		if (ann_vals.get("Value").isEmpty()) {
+    			JOptionPane.showMessageDialog(this, "Value must be non null", "Warning", JOptionPane.WARNING_MESSAGE);
+    			return false;
+    			
+    		}
     		if (complex_prop.equals(getFullSyn()) &&
     				!NCIEditTab.currentTab().validPrefName(ann_vals.get("Value"))) {
     			JOptionPane.showMessageDialog(this, "Preferred name cannot contain special characters, ! or ?", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -3174,11 +3179,7 @@ public boolean canUnMerge(OWLClass cls) {
     		
     	}
     	
-    	if (ann_vals.get("Value").isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Value must be non null", "Warning", JOptionPane.WARNING_MESSAGE);
-			return false;
-			
-		}
+    	
 
 
     	if (operation.equalsIgnoreCase(NCIEditTabConstants.EDIT)) {
