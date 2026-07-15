@@ -278,7 +278,8 @@ public class PropertyTablePanel extends JPanel implements ActionListener {
 					String lt = System.getProperty("line.separator");
 					int[] rows = tab.getSelectedRows();
 					for (int i : rows) {
-						Object obj = tab.getModel().getValueAt(i, 0);
+						int modelIdx = tab.convertRowIndexToModel(i);
+						Object obj = tab.getModel().getValueAt(modelIdx, 0);
 						res += (String) obj;
 						res += lt;
 

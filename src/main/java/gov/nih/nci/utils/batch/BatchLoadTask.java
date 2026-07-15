@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import gov.nih.nci.ui.BatchProcessOutputPanel;
 import gov.nih.nci.ui.NCIEditTab;
+import gov.nih.nci.utils.CharMapper;
 
 /**
  * @Author: Bob Dionne
@@ -64,6 +65,8 @@ public class BatchLoadTask extends BatchTask {
 		
 		
 	}
+	
+	private CharMapper mapper = new CharMapper();
 
 	public ArrayList<Vector<String>> validateData(Vector<String> v) {
 		Vector<String> w = new Vector<String>();
@@ -75,8 +78,9 @@ public class BatchLoadTask extends BatchTask {
 		try {
 			
 				
-				String name = (String) v.elementAt(0);
-				if (!tab.validPrefName(name)) {
+				String fname = mapper.fix((String) v.elementAt(0));
+				
+				if (!tab.validPrefName(fname)) {
 					String error_msg = " -- prefered name cannot contain special chars.";
 					w.add(error_msg);
 					System.out.println(error_msg);
@@ -84,19 +88,19 @@ public class BatchLoadTask extends BatchTask {
 				}
 				// TODO: Check that name doesn not already exist, need to look up by preferred name
 				
-				if (tab.existsPrefName(name)) {
+				if (tab.existsPrefName(fname)) {
 					String error_msg = " -- a class with this preferred name already exists.";
 					w.add(error_msg);
 					System.out.println(error_msg);
 					
 				}
-				if (names.get(name) != null) {
+				if (names.get(fname) != null) {
 					String error_msg = " -- a class with this preferred name was already used in this load file.";
 					w.add(error_msg);
 					System.out.println(error_msg);
 					
 				} else {
-					names.put(name, name);
+					names.put(fname, fname);
 				}
 				String sup = (String) v.elementAt(1);
 				
