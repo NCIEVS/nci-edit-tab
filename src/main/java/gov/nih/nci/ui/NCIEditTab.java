@@ -2003,6 +2003,10 @@ public boolean canUnMerge(OWLClass cls) {
 			project = lhc.findProject(pid);
 
 			if (project != null) {
+				// In the lazy read model the ontology holds no schema until fetched; materialise the
+				// property/datatype schema first so the lookups below resolve.
+				org.protege.editor.owl.model.triplestore.LazyClassLoader.getInstance()
+						.ensureSchemaLoaded(getOWLEditorKit());
 				// get all annotations from ontology to use for lookup
 				annProps = ontology.getAnnotationPropertiesInSignature();
 				
