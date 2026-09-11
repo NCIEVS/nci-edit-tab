@@ -1420,6 +1420,8 @@ public boolean canUnMerge(OWLClass cls) {
     
     public void selectClass(OWLClass cls) {
     	if (cls != null) {
+    		org.protege.editor.owl.model.triplestore.LazyClassLoader.getInstance()
+    				.ensureLoaded(cls, getOWLEditorKit());
     		currentlySelected = cls;
     		fireChange(new EditTabChangeEvent(this, ComplexEditType.SELECTED)); 
     	}
