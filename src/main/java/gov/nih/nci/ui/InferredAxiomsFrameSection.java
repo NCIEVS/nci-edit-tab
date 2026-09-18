@@ -12,6 +12,7 @@ import java.util.TreeSet;
  */
 
 import org.protege.editor.owl.OWLEditorKit;
+import org.protege.editor.owl.model.triplestore.InferredDiff;
 import org.protege.editor.owl.ui.editor.OWLObjectEditor;
 import org.protege.editor.owl.ui.frame.AbstractOWLFrameSection;
 import org.protege.editor.owl.ui.frame.InferredAxiomsFrameSectionRow;
@@ -31,7 +32,6 @@ import org.semanticweb.owlapi.util.InferredEquivalentClassAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredOntologyGenerator;
 
 import gov.nih.nci.utils.CuratorChecks;
-import uk.ac.manchester.cs.owl.owlapi.OWLOntologyManagerImpl;
 
 
 
@@ -78,35 +78,38 @@ public class InferredAxiomsFrameSection extends AbstractOWLFrameSection<OWLOntol
     		}
     		
     		cur_checks = new CuratorChecks(this.getOWLModelManager().getActiveOntology(), getOWLEditorKit());
-    		
-    		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-            OWLOntologyManagerImpl imp = (OWLOntologyManagerImpl) man;
-            OWLOntology inferredOnt = man.createOntology(IRI.create("http://another.com/ontology" + System.currentTimeMillis()));
-            InferredOntologyGenerator ontGen = new InferredOntologyGenerator(getOWLModelManager().getReasoner(), new ArrayList<>());
-            ontGen.addGenerator(new BatchInferredSubClassAxiomGenerator());
-            ontGen.addGenerator(new InferredEquivalentClassAxiomGenerator());
-           
-            ontGen.fillOntology(man.getOWLDataFactory(), inferredOnt);
 
+    		Set<OWLAxiom> inferred;
+    		// Lazy read model: the diff comes from the server's inferred graph (inferred minus asserted)
+    		// in Virtuoso, not the in-client reasoner.
+    		boolean serverDiff = Boolean.getBoolean("nci.lazyHierarchy");
+    		if (serverDiff) {
+    			inferred = InferredDiff.compute(getOWLModelManager().getOWLDataFactory());
+    		} else {
+    			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+    			OWLOntology inferredOnt = man.createOntology(IRI.create("http://another.com/ontology" + System.currentTimeMillis()));
+    			InferredOntologyGenerator ontGen = new InferredOntologyGenerator(getOWLModelManager().getReasoner(), new ArrayList<>());
+    			ontGen.addGenerator(new BatchInferredSubClassAxiomGenerator());
+    			ontGen.addGenerator(new InferredEquivalentClassAxiomGenerator());
+    			ontGen.fillOntology(man.getOWLDataFactory(), inferredOnt);
+    			inferred = inferredOnt.getAxioms();
+    		}
 
-            for (OWLAxiom ax : new TreeSet<>(inferredOnt.getAxioms())) {
-                boolean add = true;
-                if (getOWLModelManager().getActiveOntology().containsAxiom(ax)) {
-                	add = false;
-                }
-                
-                if (this.isVacuousOrRootAxiom(ax)) {
-                	add = false;
-                }
-                
-                
-                if (add) {
-                	doctorAndAdd(new InferredAxiomsFrameSectionRow(getOWLEditorKit(), this, null, getRootObject(), ax));
-                	
-                }
-            }
-            
-            
+    		for (OWLAxiom ax : new TreeSet<>(inferred)) {
+    			boolean add = true;
+    			// The server diff already excludes asserted edges; only re-check for the legacy path.
+    			if (!serverDiff && getOWLModelManager().getActiveOntology().containsAxiom(ax)) {
+    				add = false;
+    			}
+
+    			if (this.isVacuousOrRootAxiom(ax)) {
+    				add = false;
+    			}
+
+    			if (add) {
+    				doctorAndAdd(new InferredAxiomsFrameSectionRow(getOWLEditorKit(), this, null, getRootObject(), ax));
+    			}
+    		}
     	}
         catch (Exception e) {
             e.printStackTrace();
