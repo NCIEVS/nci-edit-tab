@@ -117,6 +117,10 @@ import edu.stanford.protege.search.lucene.tab.engine.QueryType;
 import edu.stanford.protege.search.lucene.tab.engine.SearchTabManager;
 import edu.stanford.protege.search.lucene.tab.engine.SearchTabResultHandler;
 import gov.nih.nci.curator.CuratorReasonerPreferences;
+import gov.nih.nci.curator.constraints.EditTimeConstraints;
+import gov.nih.nci.curator.constraints.KbDomainResolver;
+import gov.nih.nci.curator.constraints.Violation;
+import gov.nih.nci.curator.owlapi.KnowledgeBase;
 import gov.nih.nci.ui.action.ComplexOperation;
 import gov.nih.nci.ui.dialog.NCIClassCreationDialog;
 import gov.nih.nci.ui.dialog.NoteDialog;
@@ -3698,7 +3702,35 @@ public boolean canUnMerge(OWLClass cls) {
 		return clientSession;
 	}
 	
+	// Run the curator's per-class edit-time role checks (unsupported constructs, bad role
+	// domain/range) at save time so problems are caught without waiting for a full classification.
+	// Opt-in via the reasoner preferences (off by default). Non-blocking and fully isolated: any
+	// failure here must never stop a legitimate save, so it only warns and always returns.
+	private void warnOnEditTimeRoleViolations(OWLClass cls) {
+		try {
+			if (cls == null) {
+				return;
+			}
+			OWLOntology ont = getOWLModelManager().getActiveOntology();
+			KnowledgeBase kb = new KnowledgeBase(ont);
+			EditTimeConstraints checks = new EditTimeConstraints(kb, ont);
+			List<Violation> violations = checks.check(cls, new KbDomainResolver(kb));
+			if (violations.isEmpty()) {
+				return;
+			}
+			StringBuilder sb = new StringBuilder("The curator flagged this class:");
+			for (Violation v : violations) {
+				sb.append("\n\u2022 ").append(v.getMessage());
+			}
+			JOptionPane.showMessageDialog(tab, sb.toString(), "Curator edit checks",
+					JOptionPane.WARNING_MESSAGE);
+		} catch (Throwable t) {
+			log.error("Edit-time curator checks failed; allowing the save", t);
+		}
+	}
+
 	public boolean isLogicallyCorrect() {
+		warnOnEditTimeRoleViolations(currentlySelected);
 		if (ontology.getEquivalentClassesAxioms(currentlySelected).isEmpty()) {
 			return true;
 		} else {
