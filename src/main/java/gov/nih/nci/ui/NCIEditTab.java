@@ -3702,35 +3702,38 @@ public boolean canUnMerge(OWLClass cls) {
 		return clientSession;
 	}
 	
-	// Run the curator's per-class edit-time role checks (unsupported constructs, bad role
-	// domain/range) at save time so problems are caught without waiting for a full classification.
-	// Opt-in via the reasoner preferences (off by default). Non-blocking and fully isolated: any
-	// failure here must never stop a legitimate save, so it only warns and always returns.
-	private void warnOnEditTimeRoleViolations(OWLClass cls) {
+	// Returns false only if the modeler chooses to back out of a flagged save; no violations or a
+	// curator hiccup (any exception) returns true so a legitimate save is never blocked by this check.
+	private boolean confirmEditTimeRoleViolations(OWLClass cls) {
 		try {
 			if (cls == null) {
-				return;
+				return true;
 			}
 			OWLOntology ont = getOWLModelManager().getActiveOntology();
 			KnowledgeBase kb = new KnowledgeBase(ont);
 			EditTimeConstraints checks = new EditTimeConstraints(kb, ont);
 			List<Violation> violations = checks.check(cls, new KbDomainResolver(kb));
 			if (violations.isEmpty()) {
-				return;
+				return true;
 			}
 			StringBuilder sb = new StringBuilder("The curator flagged this class:");
 			for (Violation v : violations) {
 				sb.append("\n\u2022 ").append(v.getMessage());
 			}
-			JOptionPane.showMessageDialog(tab, sb.toString(), "Curator edit checks",
-					JOptionPane.WARNING_MESSAGE);
+			sb.append("\n\nSave anyway?");
+			int choice = JOptionPane.showConfirmDialog(tab, sb.toString(), "Curator edit checks",
+					JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			return choice == JOptionPane.OK_OPTION;
 		} catch (Throwable t) {
 			log.error("Edit-time curator checks failed; allowing the save", t);
+			return true;
 		}
 	}
 
 	public boolean isLogicallyCorrect() {
-		warnOnEditTimeRoleViolations(currentlySelected);
+		if (!confirmEditTimeRoleViolations(currentlySelected)) {
+			return false;
+		}
 		if (ontology.getEquivalentClassesAxioms(currentlySelected).isEmpty()) {
 			return true;
 		} else {
