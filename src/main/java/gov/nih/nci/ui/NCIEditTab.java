@@ -196,17 +196,20 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 
 			String comment = "(" +  classDeletedName + ") - DELETED";
 
-			Commit commit = ClientUtils.createCommit(clientSession.getActiveClient(), comment, changes);
+			if (!inBatchMode) {
+				pendingEvsRecords.clear();
+				submitDeleteHistory();
+			}
+			Commit commit = ClientUtils.createCommit(clientSession.getActiveClient(), comment, changes,
+					new ArrayList<History>(pendingEvsRecords));
 			DocumentRevision base = clientSession.getActiveVersionOntology().getHeadRevision();
 			CommitBundle commitBundle = new CommitBundleImpl(base, commit);
 			ChangeHistory hist;
 			try {
 				hist = clientSession.getActiveClient().commit(clientSession.getActiveProject(), commitBundle);
+				pendingEvsRecords.clear();
 
 				clientSession.getActiveVersionOntology().update(hist);
-				// submit history after the commit but before you broadcast the news
-				if (!inBatchMode) 
-					submitDeleteHistory();
 				clientSession.fireCommitPerformedEvent(new CommitOperationEvent(
 						hist.getHeadRevision(),
 						hist.getMetadataForRevision(hist.getHeadRevision()),
@@ -233,6 +236,10 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	private ArrayList<OWLOntologyChange> batch_changes = new ArrayList<OWLOntologyChange>();
 	
 	private ArrayList<List<String>> batch_history = new ArrayList<List<String>>();
+
+	// EVS/audit descriptors accumulated for the in-flight commit; sent inside the commit bundle
+	// (Decision #4) and cleared once the commit succeeds.
+	private List<History> pendingEvsRecords = new ArrayList<History>();
 	
 	private void addBatchHistory(OWLClass cls, String n, ComplexEditType typ) {
 		
@@ -258,6 +265,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 	
 	public void enableBatchMode() { 
 		inBatchMode = true;
+		pendingEvsRecords.clear();
 		history.stopTalking();
 	}
 	
@@ -1635,14 +1643,21 @@ public boolean canUnMerge(OWLClass cls) {
     	// first do last update to sync
     	clientSession.fireChangeEvent(EventCategory.UPDATE_ONTOLOGY);
     	
-		Commit commit = ClientUtils.createCommit(clientSession.getActiveClient(), comment, changes);
+		// Compute the EVS descriptors before the commit so they ride inside the bundle and the server
+		// records them in the same transaction (Decision #4). Recompute fresh for a normal commit
+		// (clearing first so a login-timeout retry does not double-record); batch mode keeps what
+		// applyChanges accumulated. Cleared only after the commit succeeds so a retry keeps them.
+		if (!inBatchMode) {
+			pendingEvsRecords.clear();
+			submitHistory();
+		}
+		Commit commit = ClientUtils.createCommit(clientSession.getActiveClient(), comment, changes,
+				new ArrayList<History>(pendingEvsRecords));
 		DocumentRevision base = clientSession.getActiveVersionOntology().getHeadRevision();
 		CommitBundle commitBundle = new CommitBundleImpl(base, commit);
 		ChangeHistory hist = clientSession.getActiveClient().commit(clientSession.getActiveProject(), commitBundle);
+		pendingEvsRecords.clear();
 		clientSession.getActiveVersionOntology().update(hist);
-		// submit history after the commit but before you broadcast the news
-		if (!inBatchMode) 
-			submitHistory();
 		clientSession.fireCommitPerformedEvent(new CommitOperationEvent(
                 hist.getHeadRevision(),
                 hist.getMetadataForRevision(hist.getHeadRevision()),
@@ -1660,19 +1675,11 @@ public boolean canUnMerge(OWLClass cls) {
                 JOptionPane.ERROR_MESSAGE, JOptionPane.DEFAULT_OPTION, null);
     }
     
+    // Accumulate an EVS/audit descriptor for the in-flight commit; recorded server-side inside the
+    // commit (Decision #4) rather than a separate post-commit call.
     public void putHistory(String c, String n, String op, String ref) {
-    	try {
-			((LocalHttpClient) clientSession.getActiveClient()).putEVSHistory(c, n, op, ref, clientSession.getActiveProject());
-		} catch (ClientRequestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (AuthorizationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-    	
-    	
+    	String user = clientSession.getActiveClient().getUserInfo().getId();
+    	pendingEvsRecords.add(new History(user, c, n, op, ref));
     }
     
     public List<History> getEvsHistory() {
