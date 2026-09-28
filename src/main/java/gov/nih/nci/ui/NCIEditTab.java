@@ -3547,71 +3547,24 @@ public boolean canUnMerge(OWLClass cls) {
     }
     
     public boolean existsPrefName(String name) {
-    	SearchTabManager searchManager = (SearchTabManager) getOWLEditorKit().getSearchManager();
-        
-        BasicQuery.Factory queryFactory = new BasicQuery.Factory(new SearchContext(getOWLEditorKit()), searchManager);
-        
-        
-        OWLProperty property = NCIEditTabConstants.LABEL_PROP;
-        QueryType queryType = QueryType.EXACT_MATCH_STRING;
-        String value = name;
-        
-        BasicQuery basicQuery = queryFactory.createQuery(property, queryType, value);
-        
-        FilteredQuery.Builder builder = new FilteredQuery.Builder();
-        builder.add(basicQuery);
-        FilteredQuery userQuery = builder.build(true);
-        
-        class MySearchTabResultHandler implements SearchTabResultHandler {
-        	private boolean exists = false;
-        	
-        	private boolean ready = false;
-        	
-        	private OWLModelManager mgr;
-        	
-        	private String searchString;
-        	
-        	public MySearchTabResultHandler(OWLEditorKit kit, String str) {
-        		mgr = kit.getModelManager();
-        		searchString = str;
-        	}
-
-			public void searchFinished(Collection<OWLEntity> searchResults) {
-				OWLEntityFinder finder = mgr.getOWLEntityFinder();
-	        	Set<OWLEntity> foundEntities = new HashSet<OWLEntity>();
-				Set<OWLEntity> ents = finder.getMatchingOWLEntities(searchString);
-        		for (OWLEntity ent : ents) {
-        			String cs = mgr.getRendering(ent);
-        			String ucs = unescape(cs);
-        			if (ucs.toLowerCase().equals(searchString.toLowerCase())) {
-        				foundEntities.add(ent);
-        			}
-        		}
-
-				exists = !foundEntities.isEmpty();
-				ready = true;
-			}
-			
-			public boolean exists() { return exists; }
-			public boolean ready() { return ready; }
-        	
-        };
-        
-        MySearchTabResultHandler srh = new MySearchTabResultHandler(getOWLEditorKit(), name);
-        
-        searchManager.performSearch(userQuery, srh);
-        
-        while (!srh.ready()) {
-        	try {
-				Thread.sleep(20);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        }
-        
-        
-    	return srh.exists(); 
+    	// Preferred name == rdfs:label == the PT/NCI FULL_SYN (EditTab-enforced), so checking one
+    	// property suffices. Both paths are synchronous: the old async Lucene search dispatched its
+    	// callback via invokeLater on the EDT, so busy-waiting for it from an EDT caller (the create
+    	// dialog) deadlocked the UI.
+    	if (org.protege.editor.owl.model.triplestore.TripleStoreContext.getInstance().isActive()) {
+    		IRI labelIri = (LABEL_PROP != null) ? LABEL_PROP.getIRI()
+    				: IRI.create("http://www.w3.org/2000/01/rdf-schema#label");
+    		return org.protege.editor.owl.model.triplestore.LazyClassLoader.getInstance()
+    				.hasLiteralValue(labelIri, name);
+    	}
+    	// Non-lazy: the whole ontology is in RAM, so the entity finder is complete and synchronous.
+    	OWLEntityFinder finder = getOWLModelManager().getOWLEntityFinder();
+    	for (OWLEntity ent : finder.getMatchingOWLEntities(name)) {
+    		if (unescape(getOWLModelManager().getRendering(ent)).equalsIgnoreCase(name)) {
+    			return true;
+    		}
+    	}
+    	return false;
     }
     
     private String unescape(String s) {

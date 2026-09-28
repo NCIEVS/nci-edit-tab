@@ -23,6 +23,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -317,33 +318,30 @@ public class NCIClassCreationDialog<T extends OWLEntity> extends JPanel {
 
 
 
+    // macOS: a modal dialog shown right after a blocking EDT operation can fail to come to the front
+    // until the user interacts, so force it always-on-top; the warning is then visible immediately.
+    private int showAlwaysOnTopConfirm(String message, String title) {
+    	JOptionPane pane = new JOptionPane(message, JOptionPane.WARNING_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+    	JDialog dialog = pane.createDialog(this, title);
+    	dialog.setAlwaysOnTop(true);
+    	dialog.setVisible(true);
+    	dialog.dispose();
+    	Object value = pane.getValue();
+    	return (value instanceof Integer) ? (Integer) value : JOptionPane.CLOSED_OPTION;
+    }
+
     public <T extends OWLEntity> boolean showDialog() {
     	int ret = JOptionPane.OK_OPTION;
     	while (ret == JOptionPane.OK_OPTION) {
     		if (NCIEditTab.currentTab().hasActiveClient()) {
     			ret = new UIHelper(owlEditorKit).showValidatingDialog("Create a new " + type.getSimpleName(), this, this.preferredNameField);
     			if (ret == JOptionPane.OK_OPTION) {
-    				OWLEntityFinder finder = owlEditorKit.getOWLModelManager().getOWLEntityFinder();
-    				Set<OWLClass> entities = finder.getMatchingOWLClasses(getEntityName());
-    				if (!entities.isEmpty()) {
-    					boolean c_exists = false;
-    			
-    					for (OWLClass c : entities) {
-    						if (owlEditorKit.getModelManager().getRendering(c).equals(possiblyEscape(getEntityName()))) {
-    							c_exists = true;
-    							break;
-    						}
-    					}
-    					if (c_exists) {
-    						int allow = JOptionPane.showConfirmDialog(this, "Preferred name already exists", "warning",
-    							JOptionPane.OK_CANCEL_OPTION);
-    						if (allow == JOptionPane.CANCEL_OPTION) {
-    							return false;
-    						} 
-    					} else {
-    						if (buildNewClassServer(getEntityName(), Optional.empty())) {
-    							return true;
-    						}
+    				// Name-existence via the Lucene index (complete) rather than the in-RAM finder, which
+    				// under the lazy model only sees browsed classes and would miss an existing pref name.
+    				if (NCIEditTab.currentTab().existsPrefName(getEntityName())) {
+    					int allow = showAlwaysOnTopConfirm("Preferred name already exists", "warning");
+    					if (allow == JOptionPane.CANCEL_OPTION) {
+    						return false;
     					}
     				} else {
     					if (buildNewClassServer(getEntityName(), Optional.empty())) {
