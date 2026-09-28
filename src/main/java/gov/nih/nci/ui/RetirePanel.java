@@ -121,6 +121,13 @@ public class RetirePanel extends JPanel {
     
     public void setOWLClass(OWLClass inst) {
     	
+    	// Prime the classes referencing inst BEFORE the usage panel reads: in the lazy model unbrowsed
+    	// referencing classes are not yet in the in-RAM ontology, and the usage count gates the retire
+    	// "fix usages" warning, so priming after it would miss them until the class was browsed.
+    	if (inst != null) {
+    		NCIEditTab.currentTab().primeReferencingClasses(inst);
+    	}
+    	
     	// always update the usages panel
     	usage_panel.setOWLEntity(inst, false);
     	if (inst == null) {
@@ -133,7 +140,7 @@ public class RetirePanel extends JPanel {
     	} else {
     		// either first time in or a new class
     		classToRetire = inst;
-			upperPanelList.setRootObject(inst.getIRI()); 
+			upperPanelList.setRootObject(inst.getIRI());
 			fixups = (new ReferenceFinder(owlEditorKit.getModelManager())).computeAnnotations(inst);
 			if (NCIEditTab.currentTab().isPreRetired(classToRetire)) {
 				retireButton.setText("Approve");

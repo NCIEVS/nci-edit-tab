@@ -166,40 +166,35 @@ public class ReferenceReplace implements OWLClassExpressionVisitor {
 			c.accept(this);
 			newDisjs.add(getNewExpression());
 		}
-		newExpression = dataFact.getOWLObjectIntersectionOf(newDisjs);
+		newExpression = dataFact.getOWLObjectUnionOf(newDisjs);
 		
 	}
 
 	@Override
 	public void visit(OWLObjectComplementOf ce) {
-		// TODO Auto-generated method stub
-		
+		OWLClassExpression op = ce.getOperand();
+		if (!op.isAnonymous() && op.asOWLClass().equals(source)) {
+			newExpression = dataFact.getOWLObjectComplementOf(target);
+		} else {
+			newExpression = ce;
+		}
 	}
 
 	@Override
 	public void visit(OWLObjectSomeValuesFrom ce) {
-		if (ce.getFiller().asOWLClass().equals(source)) {
-			System.out.println("OSVF: " + ce);
-			
+		if (!ce.getFiller().isAnonymous() && ce.getFiller().asOWLClass().equals(source)) {
 			newExpression = dataFact.getOWLObjectSomeValuesFrom(ce.getProperty(), target);
-			
-			
-			
 		} else {
 			newExpression = ce;
-		}		
+		}
 	}
 
 	@Override
 	public void visit(OWLObjectAllValuesFrom ce) {
-		if (ce.getFiller().asOWLClass().equals(source)) {
-			System.out.println("OSVF: " + ce);
-			
-			newExpression = dataFact.getOWLObjectSomeValuesFrom(ce.getProperty(), target);
-			
-			
-			
-			
+		if (!ce.getFiller().isAnonymous() && ce.getFiller().asOWLClass().equals(source)) {
+			newExpression = dataFact.getOWLObjectAllValuesFrom(ce.getProperty(), target);
+		} else {
+			newExpression = ce;
 		}
 	}
 
@@ -207,96 +202,96 @@ public class ReferenceReplace implements OWLClassExpressionVisitor {
 
 	@Override
 	public void visit(OWLObjectHasValue ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLObjectMinCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		if (!ce.getFiller().isAnonymous() && ce.getFiller().asOWLClass().equals(source)) {
+			newExpression = dataFact.getOWLObjectMinCardinality(ce.getCardinality(), ce.getProperty(), target);
+		} else {
+			newExpression = ce;
+		}
 	}
 
 
 
 	@Override
 	public void visit(OWLObjectExactCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		if (!ce.getFiller().isAnonymous() && ce.getFiller().asOWLClass().equals(source)) {
+			newExpression = dataFact.getOWLObjectExactCardinality(ce.getCardinality(), ce.getProperty(), target);
+		} else {
+			newExpression = ce;
+		}
 	}
 
 
 
 	@Override
 	public void visit(OWLObjectMaxCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		if (!ce.getFiller().isAnonymous() && ce.getFiller().asOWLClass().equals(source)) {
+			newExpression = dataFact.getOWLObjectMaxCardinality(ce.getCardinality(), ce.getProperty(), target);
+		} else {
+			newExpression = ce;
+		}
 	}
 
 
 
 	@Override
 	public void visit(OWLObjectHasSelf ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLObjectOneOf ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataSomeValuesFrom ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataAllValuesFrom ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataHasValue ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataMinCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataExactCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 
 
 	@Override
 	public void visit(OWLDataMaxCardinality ce) {
-		// TODO Auto-generated method stub
-		
+		newExpression = ce;
 	}
 
 

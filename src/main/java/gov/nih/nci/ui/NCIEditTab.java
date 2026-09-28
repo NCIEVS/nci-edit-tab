@@ -499,6 +499,18 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
 		return associations.contains(p);
 	}				
 
+	// Materialise every class referencing e (child, role filler, association source) into the lazy
+	// in-RAM ontology so the merge/retire reference scans see the full closure, not just browsed
+	// classes. No-op when the lazy model is inactive.
+	public void primeReferencingClasses(OWLClass e) {
+		Set<String> assocProps = new HashSet<String>();
+		for (OWLAnnotationProperty p : associations) {
+			assocProps.add(p.getIRI().toString());
+		}
+		org.protege.editor.owl.model.triplestore.LazyClassLoader.getInstance()
+				.ensureReferencingClassesLoaded(e, getOWLEditorKit(), assocProps);
+	}
+
 	public NCIEditTab() {
 		setToolTipText("Custom Editor for NCI");
 		tab = this;
@@ -789,6 +801,7 @@ public class NCIEditTab extends OWLWorkspaceViewsTab implements ClientSessionLis
     	
     	OWLDataFactory df = getOWLModelManager().getOWLDataFactory();
     	
+    	primeReferencingClasses(source);
     	changes.addAll((new ReferenceReplace(getOWLModelManager())).retargetRefs(source, target)); 
     	
     	
@@ -2217,6 +2230,14 @@ public boolean canUnMerge(OWLClass cls) {
 			for (OWLEntity et : classes) {
 				cls = et.asOWLClass();
 			}
+			// Lazy model: workflow-root classes (retired/premerged/preretired roots) are real classes
+			// in the store but not materialised into the sparse in-RAM signature at config time, so the
+			// signature lookup misses them -- which silently disables merge/retire re-parenting and the
+			// OLD_PARENT annotations (both gated on a non-null root). The config IRI is authoritative.
+			if (cls == null
+					&& org.protege.editor.owl.model.triplestore.TripleStoreContext.getInstance().isActive()) {
+				cls = getOWLModelManager().getOWLDataFactory().getOWLClass(iri);
+			}
 		}
 		return cls;
 	}
@@ -3033,6 +3054,12 @@ public boolean canUnMerge(OWLClass cls) {
 		for (OWLEntity et : classes) {
 			cls = et.asOWLClass();
 		}
+		// Lazy model: the class exists in the store but may not be in the sparse in-RAM signature; the
+		// IRI is well-formed, so resolve it directly (mirrors findOWLClass).
+		if (cls == null
+				&& org.protege.editor.owl.model.triplestore.TripleStoreContext.getInstance().isActive()) {
+			cls = getOWLModelManager().getOWLDataFactory().getOWLClass(iri);
+		}
 		
 		return cls;		
 	}
@@ -3684,6 +3711,9 @@ public boolean canUnMerge(OWLClass cls) {
     }
     
     private String getCodeOrIRI(OWLClass cls) {
+    	if (cls == null) {
+    		return "";
+    	}
     	String c;
     	Optional<String> cs = getCode(cls);
     	if (cs.isPresent()) {
