@@ -2352,8 +2352,11 @@ public boolean canUnMerge(OWLClass cls) {
 				} else {
 					val = IRI.create(CODE_PROP.getIRI().getNamespace() + value);
 				}
-				return !ontology.getEntitiesInSignature(val).isEmpty();
-							
+				if (!ontology.getEntitiesInSignature(val).isEmpty()) {
+					return true;
+				}
+				// Lazy model: the referenced class may exist in the store but not the sparse signature.
+				return org.protege.editor.owl.model.triplestore.LazyClassLoader.getInstance().containsEntity(val);
 			}
 		}
 		return true;		
@@ -3034,6 +3037,11 @@ public boolean canUnMerge(OWLClass cls) {
 		Set<OWLEntity> classes = ontology.getEntitiesInSignature(iri);
 		for (OWLEntity et : classes) {
 			cls = et.asOWLClass();
+		}
+		// Lazy model: resolve the well-formed IRI directly when the sparse signature misses it.
+		if (cls == null
+				&& org.protege.editor.owl.model.triplestore.TripleStoreContext.getInstance().isActive()) {
+			cls = getOWLModelManager().getOWLDataFactory().getOWLClass(iri);
 		}
 
 		return cls;
