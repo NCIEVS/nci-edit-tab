@@ -81,6 +81,11 @@ RetireClassTarget, UnRetireClassTarget, UnMergeClassTarget, AddComplexTarget, Se
 			 */
 			private static final long serialVersionUID = 1L;
 
+			@Override
+			protected boolean applyLazyEditGuard() {
+				return false;
+			}
+
 			public void actionPerformed(ActionEvent event) {
 				createNewChild();
 			}
@@ -93,6 +98,11 @@ RetireClassTarget, UnRetireClassTarget, UnMergeClassTarget, AddComplexTarget, Se
 		DeleteClassAction deleteClassAction =
                 new DeleteClassAction(getOWLEditorKit(),
                                       new InternalOWLEntitySetProvider()) {
+                    @Override
+                    protected boolean applyLazyEditGuard() {
+                        return false;
+                    }
+
                     @Override
                     public void updateState() {
                         super.updateState();

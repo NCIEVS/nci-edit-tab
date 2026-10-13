@@ -1501,7 +1501,9 @@ public boolean canUnMerge(OWLClass cls) {
     
     public boolean isRetired(OWLClass cls) {
     	if (cls != null) {
-    		OWLAnnotationProperty deprecated = this.lookUpShort("deprecated");
+    		// owl:deprecated is a built-in, not an NCI schema property, so it is absent from the
+    		// lazily-populated annProps; resolve it from the data factory, not lookUpShort.
+    		OWLAnnotationProperty deprecated = getOWLModelManager().getOWLDataFactory().getOWLDeprecated();
     		Optional<String> bool = getPropertyValue(cls, deprecated);
     		if (bool.isPresent()) {
     			return (bool.get().equals("true"));
