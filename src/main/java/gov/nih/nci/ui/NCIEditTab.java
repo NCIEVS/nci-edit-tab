@@ -1659,8 +1659,16 @@ public boolean canUnMerge(OWLClass cls) {
     		}
     	}
     	
-    	// first do last update to sync
-    	clientSession.fireChangeEvent(EventCategory.UPDATE_ONTOLOGY);
+    	// PROTOTYPE (conflict-at-commit): do NOT force a full rebase to head before
+    	// reading the base revision below. The old pre-commit UPDATE_ONTOLOGY advanced
+    	// the client to the current server head so base == head, which made the per-class
+    	// ConflictDetectionFilter structurally unreachable -- it only engages when base < head.
+    	// We now commit against the revision the user's edits were actually made on; the
+    	// server's per-entity gate accepts non-overlapping concurrent edits and rejects a
+    	// real same-entity conflict with "outdated for: [X]. Please do update." The client
+    	// head still advances on a successful commit via getActiveVersionOntology().update(hist)
+    	// and on the background auto-updater poll, so normal sequential commits are unaffected.
+    	// clientSession.fireChangeEvent(EventCategory.UPDATE_ONTOLOGY);
     	
 		// Compute the EVS descriptors before the commit so they ride inside the bundle and the server
 		// records them in the same transaction (Decision #4). Recompute fresh for a normal commit
